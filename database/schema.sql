@@ -1,44 +1,52 @@
-CREATE TABLE checker (
-    checker_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    checker_name VARCHAR(255) NOT NULL,
-    is_active BOOLEAN NOT NULL DEFAULT TRUE
+CREATE TABLE news (
+    news_id BIGINT GENERATED ALWAYS AS IDENTITY,
+    title TEXT NOT NULL,
+    number_of_files INTEGER NOT NULL,
+    total_size FLOAT(53) NOT NULL,
+    news_date DATE NOT NULL,
+    location VARCHAR(255) NOT NULL,
+
+    PRIMARY KEY (news_id)
 );
 
 CREATE TABLE cameraman (
-    cameraman_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    cameraman_id BIGINT GENERATED ALWAYS AS IDENTITY,
     cameraman_name VARCHAR(255) NOT NULL,
-    is_active BOOLEAN NOT NULL DEFAULT TRUE
+    is_active BOOLEAN NOT NULL,
+
+    PRIMARY KEY (cameraman_id)
 );
 
 CREATE TABLE reporter (
-    reporter_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    reporter_id BIGINT GENERATED ALWAYS AS IDENTITY,
     reporter_name VARCHAR(255) NOT NULL,
-    is_active BOOLEAN NOT NULL DEFAULT TRUE
+    is_active BOOLEAN NOT NULL,
+
+    PRIMARY KEY (reporter_id)
 );
 
-CREATE TABLE news (
-    news_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    title TEXT NOT NULL,
-    number_of_files INTEGER NOT NULL DEFAULT 0,
-    total_size BIGINT NOT NULL DEFAULT 0,
-    news_date DATE NOT NULL,
-    location VARCHAR(255) NOT NULL
+CREATE TABLE staff_member (
+    member_id BIGINT GENERATED ALWAYS AS IDENTITY,
+    member_name VARCHAR(255) NOT NULL,
+    is_active BOOLEAN NOT NULL,
+
+    PRIMARY KEY (member_id)
 );
 
-CREATE TABLE news_checker (
-    news_id BIGINT NOT NULL,
-    checker_id BIGINT NOT NULL,
+CREATE TABLE app_user (
+    user_id BIGINT GENERATED ALWAYS AS IDENTITY,
+    username VARCHAR(255) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    full_name VARCHAR(255) NOT NULL,
 
-    PRIMARY KEY (news_id, checker_id),
+    PRIMARY KEY (user_id)
+);
 
-    CONSTRAINT fk_news_checker_news
-        FOREIGN KEY (news_id)
-        REFERENCES news(news_id)
-        ON DELETE CASCADE,
+CREATE TABLE app_role (
+    role_id BIGINT GENERATED ALWAYS AS IDENTITY,
+    role_name VARCHAR(255) NOT NULL UNIQUE,
 
-    CONSTRAINT fk_news_checker_checker
-        FOREIGN KEY (checker_id)
-        REFERENCES checker(checker_id)
+    PRIMARY KEY (role_id)
 );
 
 CREATE TABLE news_cameraman (
@@ -73,19 +81,6 @@ CREATE TABLE news_reporter (
         REFERENCES reporter(reporter_id)
 );
 
-CREATE TABLE app_user (
-    user_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    username VARCHAR(255) NOT NULL UNIQUE,
-    password VARCHAR(255) NOT NULL,
-    full_name VARCHAR(255) NOT NULL,
-    is_active BOOLEAN NOT NULL DEFAULT TRUE
-);
-
-CREATE TABLE app_role (
-    role_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    role_name VARCHAR(100) NOT NULL UNIQUE
-);
-
 CREATE TABLE user_role (
     user_id BIGINT NOT NULL,
     role_id BIGINT NOT NULL,
@@ -100,4 +95,37 @@ CREATE TABLE user_role (
     CONSTRAINT fk_user_role_role
         FOREIGN KEY (role_id)
         REFERENCES app_role(role_id)
+        ON DELETE CASCADE
+);
+
+CREATE TABLE news_importer (
+    news_id BIGINT NOT NULL,
+    imported_by BIGINT NOT NULL,
+
+    PRIMARY KEY (news_id, imported_by),
+
+    CONSTRAINT fk_news_importer_news
+        FOREIGN KEY (news_id)
+        REFERENCES news(news_id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_news_importer_staff
+        FOREIGN KEY (imported_by)
+        REFERENCES staff_member(member_id)
+);
+
+CREATE TABLE news_ingestor (
+    news_id BIGINT NOT NULL,
+    ingested_by BIGINT NOT NULL,
+
+    PRIMARY KEY (news_id, ingested_by),
+
+    CONSTRAINT fk_news_ingestor_news
+        FOREIGN KEY (news_id)
+        REFERENCES news(news_id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_news_ingestor_staff
+        FOREIGN KEY (ingested_by)
+        REFERENCES staff_member(member_id)
 );
