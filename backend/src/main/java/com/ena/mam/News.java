@@ -29,7 +29,7 @@ public class News {
     @Column(name = "news_date")
     private LocalDate newsDate;
 
-    private String location;
+    private Set<Long> location = new HashSet<>();
 
     @ManyToMany
     @JoinTable(
@@ -100,11 +100,11 @@ public class News {
         this.newsDate = newsDate;
     }
 
-    public String getLocation() {
+    public Set<Long> getLocation() {
         return location;
     }
 
-    public void setLocation(String location) {
+    public void setLocation(Set<Long> location) {
         this.location = location;
     }
 

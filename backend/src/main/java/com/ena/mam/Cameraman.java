@@ -24,6 +24,10 @@ public class Cameraman {
         return cameramanId;
     }
 
+    public void setCameramanId(Long cameramanId) {
+        this.cameramanId = cameramanId;
+    }
+
     public String getCameramanName() {
         return cameramanName;
     }

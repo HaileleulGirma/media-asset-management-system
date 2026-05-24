@@ -3,16 +3,17 @@ package com.ena.mam.dto.request;
 import java.time.LocalDate;
 import java.util.Set;
 
-public record NewsFilter(
+public record CreateNewsRequest(
 
         String title,
-        String location,
-        LocalDate startDate,
-        LocalDate endDate,
+        Set<Long> location,
+        LocalDate newsDate,
         Set<Long> cameramanIds,
         Set<Long> reporterIds,
         Set<Long> importerIds,
-        Set<Long> ingestorIds
+        Set<Long> ingestorIds,
+        Integer numberOfFiles,
+        Double totalSize
 
 ) {
 }
