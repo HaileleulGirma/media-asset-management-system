@@ -1,4 +1,4 @@
-package com.ena.mam;
+package com.ena.mam.staffmember;
 
 public class StaffMemberController {
 }

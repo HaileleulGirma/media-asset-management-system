@@ -1,4 +1,4 @@
-package com.ena.mam;
+package com.ena.mam.appuser;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 

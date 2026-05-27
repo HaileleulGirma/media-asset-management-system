@@ -1,6 +1,12 @@
-package com.ena.mam;
+package com.ena.mam.news;
 
+import com.ena.mam.cameraman.Cameraman;
+import com.ena.mam.cameraman.CameramanRepository;
 import com.ena.mam.dto.request.CreateNewsRequest;
+import com.ena.mam.reporter.Reporter;
+import com.ena.mam.reporter.ReporterRepository;
+import com.ena.mam.staffmember.StaffMember;
+import com.ena.mam.staffmember.StaffMemberRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.HashSet;

@@ -1,4 +1,4 @@
-package com.ena.mam;
+package com.ena.mam.reporter;
 
 import jakarta.persistence.*;
 

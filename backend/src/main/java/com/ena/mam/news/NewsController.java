@@ -1,4 +1,4 @@
-package com.ena.mam;
+package com.ena.mam.news;
 
 import com.ena.mam.dto.request.CreateNewsRequest;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -14,7 +14,7 @@ public class NewsController {
         this.newsService = newsService;
     }
 
-    @PostMapping("/news")
+    @PostMapping("api/create/news")
     public News newsSearch(@RequestBody CreateNewsRequest request){
         return newsService.create(request);
     }

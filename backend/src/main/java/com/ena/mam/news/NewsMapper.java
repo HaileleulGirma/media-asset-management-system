@@ -1,5 +1,8 @@
-package com.ena.mam;
+package com.ena.mam.news;
 
+import com.ena.mam.cameraman.Cameraman;
+import com.ena.mam.reporter.Reporter;
+import com.ena.mam.staffmember.StaffMember;
 import com.ena.mam.dto.request.CreateNewsRequest;
 import org.springframework.stereotype.Component;
 

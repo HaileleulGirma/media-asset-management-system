@@ -1,5 +1,6 @@
-package com.ena.mam;
+package com.ena.mam.appuser;
 
+import com.ena.mam.approle.AppRole;
 import jakarta.persistence.*;
 
 import java.util.HashSet;

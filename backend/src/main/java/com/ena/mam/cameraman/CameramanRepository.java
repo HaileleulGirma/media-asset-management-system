@@ -1,4 +1,4 @@
-package com.ena.mam;
+package com.ena.mam.cameraman;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
