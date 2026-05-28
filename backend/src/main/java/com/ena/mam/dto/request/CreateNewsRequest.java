@@ -6,12 +6,12 @@ import java.util.Set;
 public record CreateNewsRequest(
 
         String title,
-        Set<Long> location,
+        Set<Long> locationIds,
         LocalDate newsDate,
         Set<Long> cameramanIds,
         Set<Long> reporterIds,
-        Set<Long> importerIds,
-        Set<Long> ingestorIds,
+        Long importerId,
+        Long ingestorId,
         Integer numberOfFiles,
         Double totalSize
 

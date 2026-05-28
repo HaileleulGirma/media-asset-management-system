@@ -11,25 +11,25 @@ public class StaffMember {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "member_id")
-    private Long memberId;
+    @Column(name = "staff_member_id")
+    private Long staffMemberId;
 
-    @Column(name = "member_name")
-    private String memberName;
+    @Column(name = "staff_member_name")
+    private String staffMemberName;
 
     @Column(name = "is_active")
     private Boolean isActive;
 
-    public Long getMemberId() {
-        return memberId;
+    public Long getStaffMemberId() {
+        return staffMemberId;
     }
 
-    public String getMemberName() {
-        return memberName;
+    public String getStaffMemberName() {
+        return staffMemberName;
     }
 
-    public void setMemberName(String memberName) {
-        this.memberName = memberName;
+    public void setStaffMemberName(String memberName) {
+        this.staffMemberName = memberName;
     }
 
     public Boolean getActive() {

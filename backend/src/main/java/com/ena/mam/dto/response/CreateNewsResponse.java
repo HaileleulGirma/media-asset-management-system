@@ -1,4 +1,27 @@
 package com.ena.mam.dto.response;
 
-public record CreateNewsResponse() {
+import java.time.LocalDate;
+import java.util.Set;
+
+public record CreateNewsResponse(
+        Long newsId,
+
+        LocalDate newsDate,
+
+        Set<Long> cameramanIds,
+
+        Set<Long> reporterIds,
+
+        String title,
+
+        Set<Long> locationIds,
+
+        Long importerId,
+
+        Long ingestorId,
+
+        Integer numberOfFiles,
+
+        Double totalSize
+) {
 }

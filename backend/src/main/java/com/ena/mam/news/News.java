@@ -1,6 +1,7 @@
 package com.ena.mam.news;
 
 import com.ena.mam.cameraman.Cameraman;
+import com.ena.mam.location.Location;
 import com.ena.mam.reporter.Reporter;
 import com.ena.mam.staffmember.StaffMember;
 import jakarta.persistence.*;
@@ -21,6 +22,7 @@ public class News {
     @Column(name = "news_id")
     private Long newsId;
 
+    @Column(name = "title")
     private String title;
 
     @Column(name = "number_of_files")
@@ -32,7 +34,6 @@ public class News {
     @Column(name = "news_date")
     private LocalDate newsDate;
 
-    private Set<Long> location = new HashSet<>();
 
     @ManyToMany
     @JoinTable(
@@ -50,21 +51,21 @@ public class News {
     )
     private Set<Reporter> reporters = new HashSet<>();
 
-    @ManyToMany
-    @JoinTable(
-            name = "news_importer",
-            joinColumns = @JoinColumn(name = "news_id"),
-            inverseJoinColumns = @JoinColumn(name = "imported_by")
-    )
-    private Set<StaffMember> importers = new HashSet<>();
+    @ManyToOne
+    @JoinColumn(name = "imported_by")
+    private StaffMember importer;
+
+    @ManyToOne
+    @JoinColumn(name = "ingested_by")
+    private StaffMember ingestor;
 
     @ManyToMany
     @JoinTable(
-            name = "news_ingestor",
+            name = "news_location",
             joinColumns = @JoinColumn(name = "news_id"),
-            inverseJoinColumns = @JoinColumn(name = "ingested_by")
+            inverseJoinColumns = @JoinColumn(name = "location_id")
     )
-    private Set<StaffMember> ingestors = new HashSet<>();
+    private Set<Location> locations = new HashSet<>();
 
 
     public Long getNewsId() {
@@ -103,16 +104,33 @@ public class News {
         this.newsDate = newsDate;
     }
 
-    public Set<Long> getLocation() {
-        return location;
-    }
-
-    public void setLocation(Set<Long> location) {
-        this.location = location;
-    }
 
     public Set<Cameraman> getCameramen() {
         return cameramen;
+    }
+
+    public Set<Location> getLocations() {
+        return locations;
+    }
+
+    public void setLocations(Set<Location> locations) {
+        this.locations = locations;
+    }
+
+    public StaffMember getImporter() {
+        return importer;
+    }
+
+    public void setImporter(StaffMember importer) {
+        this.importer = importer;
+    }
+
+    public StaffMember getIngestor() {
+        return ingestor;
+    }
+
+    public void setIngestor(StaffMember ingestor) {
+        this.ingestor = ingestor;
     }
 
     public void setCameramen(Set<Cameraman> cameramen) {
@@ -127,19 +145,5 @@ public class News {
         this.reporters = reporters;
     }
 
-    public Set<StaffMember> getImporters() {
-        return importers;
-    }
 
-    public void setImporters(Set<StaffMember> importers) {
-        this.importers = importers;
-    }
-
-    public Set<StaffMember> getIngestors() {
-        return ingestors;
-    }
-
-    public void setIngestors(Set<StaffMember> ingestors) {
-        this.ingestors = ingestors;
-    }
 }
