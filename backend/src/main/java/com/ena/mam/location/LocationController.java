@@ -2,6 +2,7 @@ package com.ena.mam.location;
 
 import com.ena.mam.dto.request.CreateLocationRequest;
 import com.ena.mam.dto.response.CreateLocationResponse;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -16,7 +17,7 @@ public class LocationController {
 
     @PostMapping("/api/location/create")
     public CreateLocationResponse create(
-            @RequestBody CreateLocationRequest request
+            @Valid @RequestBody CreateLocationRequest request
             ){
         return locationService.create(request);
     }

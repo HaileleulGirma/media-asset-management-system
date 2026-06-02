@@ -2,6 +2,7 @@ package com.ena.mam.cameraman;
 
 import com.ena.mam.dto.request.CreateCameramanRequest;
 import com.ena.mam.dto.response.CreateCameramanResponse;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -16,7 +17,7 @@ public class CameramanController {
 
     @PostMapping("/api/cameraman/create")
     public CreateCameramanResponse create(
-            @RequestBody CreateCameramanRequest request
+           @Valid @RequestBody CreateCameramanRequest request
             )
     {
         return cameramanService.create(request);

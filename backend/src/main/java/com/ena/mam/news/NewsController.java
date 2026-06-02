@@ -2,6 +2,7 @@ package com.ena.mam.news;
 
 import com.ena.mam.dto.request.CreateNewsRequest;
 import com.ena.mam.dto.response.CreateNewsResponse;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -16,7 +17,7 @@ public class NewsController {
     }
 
     @PostMapping("api/create/news")
-    public CreateNewsResponse create(@RequestBody CreateNewsRequest request){
+    public CreateNewsResponse create(@Valid @RequestBody CreateNewsRequest request){
         return newsService.create(request);
     }
 
