@@ -66,4 +66,22 @@ public class NewsMapper {
                 news.getTotalSize()
         );
     }
+
+    public void updateNews(
+            News news,
+            CreateNewsRequest request,
+            Set<Cameraman> cameramen,
+            Set<Reporter> reporters,
+            StaffMember importer,
+            StaffMember ingestor,
+            Set<Location> locations) {
+
+        news.setTitle(request.title());
+        news.setCameramen(cameramen);
+        news.setReporters(reporters);
+        news.setImporter(importer);
+        news.setIngestor(ingestor);
+        news.setLocations(locations);
+    }
+
 }
