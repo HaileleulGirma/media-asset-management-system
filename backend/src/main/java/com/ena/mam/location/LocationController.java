@@ -3,9 +3,8 @@ package com.ena.mam.location;
 import com.ena.mam.dto.request.CreateLocationRequest;
 import com.ena.mam.dto.response.CreateLocationResponse;
 import jakarta.validation.Valid;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 public class LocationController {
@@ -20,5 +19,19 @@ public class LocationController {
             @Valid @RequestBody CreateLocationRequest request
             ){
         return locationService.create(request);
+    }
+
+    @PutMapping("/api/location/{locationId}")
+    public CreateLocationResponse update(
+            @PathVariable @RequestParam Long locationId, @Valid @RequestBody CreateLocationRequest request
+    ){
+        return locationService.update(locationId, request);
+    }
+
+    @DeleteMapping("api/location/{locationId}")
+    public ResponseEntity<Void> delete(Long locationId){
+        locationService.delete(locationId);
+
+        return ResponseEntity.noContent().build();
     }
 }
