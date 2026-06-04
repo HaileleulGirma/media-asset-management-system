@@ -2,6 +2,7 @@ package com.ena.mam.staffmember;
 
 import com.ena.mam.dto.request.CreateStaffMemberRequest;
 import com.ena.mam.dto.response.CreateStaffMemberResponse;
+import com.ena.mam.exception.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -18,5 +19,20 @@ public class StaffMemberService {
         StaffMember staffMember = staffMemberMapper.toStaffMember(request);
         StaffMember savedStaffMember = staffMemberRepository.save(staffMember);
         return staffMemberMapper.toResponse(savedStaffMember);
+    }
+
+    public CreateStaffMemberResponse update(Long id, CreateStaffMemberRequest request){
+        StaffMember staffMember = staffMemberRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Staff Member with id %d not found.".formatted(id)));
+
+        staffMember.setStaffMemberName(request.staffMemberName());
+        staffMember.setActive(request.isActive());
+
+        StaffMember savedStaffMember = staffMemberRepository.save(staffMember);
+        return staffMemberMapper.toResponse(savedStaffMember);
+    }
+
+    public void delete(Long id){
+        staffMemberRepository.deleteById(id);
     }
 }
