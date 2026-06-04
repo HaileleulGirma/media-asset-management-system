@@ -4,6 +4,7 @@ import com.ena.mam.cameraman.Cameraman;
 import com.ena.mam.cameraman.CameramanRepository;
 import com.ena.mam.dto.request.CreateNewsRequest;
 import com.ena.mam.dto.response.CreateNewsResponse;
+import com.ena.mam.exception.ResourceNotFoundException;
 import com.ena.mam.location.Location;
 import com.ena.mam.location.LocationRepository;
 import com.ena.mam.reporter.Reporter;
@@ -72,5 +73,39 @@ public class NewsService {
         News savedNews = newsRepository.save(news);
 
         return newsMapper.toResponse(savedNews);
+    }
+
+    public CreateNewsResponse update(Long newsId, CreateNewsRequest request){
+        News news = newsRepository.findById(newsId).orElseThrow(() -> new ResourceNotFoundException("News with id %d not found.".formatted(newsId)));
+
+        Set<Cameraman> cameramen =
+                new HashSet<>(cameramanRepository.findAllById(request.cameramanIds()));
+
+        Set<Reporter> reporters =
+                new HashSet<>(reporterRepository.findAllById(request.reporterIds()));
+
+        StaffMember importer = staffMemberRepository.findById(request.importerId()).orElseThrow(() -> new ResourceNotFoundException("Staff member with id %d not found.".formatted(request.importerId())));
+        StaffMember ingestor = staffMemberRepository.findById(request.ingestorId()).orElseThrow(() -> new ResourceNotFoundException("Staff member with id %d not found.".formatted(request.ingestorId())));
+
+        Set<Location> locations =
+                new HashSet<>(locationRepository.findAllById(request.locationIds()));
+
+        newsMapper.updateNews(
+                news,
+                request,
+                cameramen,
+                reporters,
+                importer,
+                ingestor,
+                locations
+        );
+
+        News savedNews = newsRepository.save(news);
+
+        return newsMapper.toResponse(savedNews);
+    }
+
+    public void delete(Long newsId){
+        newsRepository.deleteById(newsId);
     }
 }
