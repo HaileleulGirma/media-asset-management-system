@@ -28,7 +28,7 @@ public class LocationController {
         return locationService.update(locationId, request);
     }
 
-    @DeleteMapping("api/location/{locationId}")
+    @DeleteMapping("/api/location/{locationId}")
     public ResponseEntity<Void> delete(Long locationId){
         locationService.delete(locationId);
 
