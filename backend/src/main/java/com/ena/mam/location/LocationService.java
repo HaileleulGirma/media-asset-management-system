@@ -3,16 +3,21 @@ package com.ena.mam.location;
 import com.ena.mam.dto.request.CreateLocationRequest;
 import com.ena.mam.dto.response.CreateLocationResponse;
 import com.ena.mam.exception.ResourceNotFoundException;
+import com.ena.mam.reporter.ReporterMapper;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 public class LocationService {
     private final LocationMapper locationMapper;
     private final LocationRepository locationRepository;
+    private final ReporterMapper reporterMapper;
 
-    public LocationService(LocationMapper locationMapper, LocationRepository locationRepository) {
+    public LocationService(LocationMapper locationMapper, LocationRepository locationRepository, ReporterMapper reporterMapper) {
         this.locationMapper = locationMapper;
         this.locationRepository = locationRepository;
+        this.reporterMapper = reporterMapper;
     }
 
     public CreateLocationResponse create(CreateLocationRequest request){
@@ -34,5 +39,17 @@ public class LocationService {
 
     public void delete(Long id){
         locationRepository.deleteById(id);
+    }
+
+    public CreateLocationResponse findLocation(Long id){
+        Location location = locationRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Location with id %d not found.".formatted(id)));
+        return locationMapper.toResponse(location);
+    }
+
+    public List<CreateLocationResponse> findAll(){
+        return locationRepository.findAll()
+                .stream()
+                .map(locationMapper::toResponse)
+                .toList();
     }
 }
