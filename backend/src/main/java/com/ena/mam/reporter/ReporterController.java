@@ -6,6 +6,8 @@ import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 public class ReporterController {
 
@@ -37,5 +39,17 @@ public class ReporterController {
         reporterService.delete(reporterId);
 
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/api/reporter/{reporterId}")
+    public CreateReporterResponse findUsingId(
+            @PathVariable Long reporterId
+    ){
+       return reporterService.findReporter(reporterId);
+    }
+
+    @GetMapping("/api/reporter")
+    public List<CreateReporterResponse> findAll() {
+        return reporterService.findAll();
     }
 }
