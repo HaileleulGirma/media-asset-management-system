@@ -5,6 +5,8 @@ import com.ena.mam.dto.response.CreateStaffMemberResponse;
 import com.ena.mam.exception.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public class StaffMemberService {
     private final StaffMemberRepository staffMemberRepository;
@@ -34,5 +36,17 @@ public class StaffMemberService {
 
     public void delete(Long id){
         staffMemberRepository.deleteById(id);
+    }
+
+    public CreateStaffMemberResponse findById(Long id){
+        StaffMember staffMember = staffMemberRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Staff Member with id %d not found.".formatted(id)));
+        return staffMemberMapper.toResponse(staffMember);
+    }
+
+    public List<CreateStaffMemberResponse> findAll(){
+        return staffMemberRepository.findAll()
+                .stream()
+                .map(staffMemberMapper::toResponse)
+                .toList();
     }
 }
