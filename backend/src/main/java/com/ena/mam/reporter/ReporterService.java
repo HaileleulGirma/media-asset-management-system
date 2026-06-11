@@ -5,6 +5,8 @@ import com.ena.mam.dto.response.CreateReporterResponse;
 import com.ena.mam.exception.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public class ReporterService {
     private final ReporterMapper reporterMapper;
@@ -35,5 +37,19 @@ public class ReporterService {
 
     public void delete(Long id){
         reporterRepository.deleteById(id);
+    }
+
+    public CreateReporterResponse findReporter(Long id){
+        Reporter reporter = reporterRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Reporter with id %d not found.".formatted(id)));
+
+        return reporterMapper.toResponse(reporter);
+    }
+
+    public List<CreateReporterResponse> findAll(){
+        return reporterRepository.findAll()
+                .stream()
+                .map(reporterMapper::toResponse)
+                .toList();
+
     }
 }
