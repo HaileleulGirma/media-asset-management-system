@@ -6,6 +6,8 @@ import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 public class LocationController {
     private final LocationService locationService;
@@ -33,5 +35,19 @@ public class LocationController {
         locationService.delete(locationId);
 
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/api/location/{locationId}")
+    public CreateLocationResponse findUsingId(
+            @PathVariable Long locationId
+    )
+    {
+        return locationService.findLocation(locationId);
+    }
+
+    @GetMapping("/api/location")
+    public List<CreateLocationResponse> findAll(
+    ){
+        return locationService.findAll();
     }
 }
