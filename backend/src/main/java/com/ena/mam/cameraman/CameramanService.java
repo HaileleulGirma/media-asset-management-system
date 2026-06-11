@@ -5,6 +5,8 @@ import com.ena.mam.dto.response.CreateCameramanResponse;
 import com.ena.mam.exception.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public class CameramanService {
     private final CameramanRepository cameramanRepository;
@@ -33,5 +35,17 @@ public class CameramanService {
 
     public void delete(Long cameramanId){
         cameramanRepository.deleteById(cameramanId);
+    }
+
+    public CreateCameramanResponse findById(Long cameramanId){
+        Cameraman cameraman = cameramanRepository.findById(cameramanId).orElseThrow(() -> new ResourceNotFoundException("Cameraman with id %d not found.".formatted(cameramanId)));
+        return cameramanMapper.toResponse(cameraman);
+    }
+
+    public List<CreateCameramanResponse> findAll(){
+        return cameramanRepository.findAll()
+                .stream()
+                .map(cameramanMapper::toResponse)
+                .toList();
     }
 }
