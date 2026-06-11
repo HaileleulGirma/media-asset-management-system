@@ -6,6 +6,8 @@ import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 public class CameramanController {
     private final CameramanService cameramanService;
@@ -36,5 +38,18 @@ public class CameramanController {
         cameramanService.delete(cameramanId);
 
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/api/cameraman/{cameramanId}")
+    public CreateCameramanResponse findById(
+            @PathVariable Long cameramanId
+    )
+    {
+        return cameramanService.findById(cameramanId);
+    }
+
+    @GetMapping("/api/cameraman")
+    public List<CreateCameramanResponse> findAll(){
+        return cameramanService.findAll();
     }
 }
