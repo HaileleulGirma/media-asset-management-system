@@ -6,6 +6,8 @@ import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 public class StaffMemberController {
 
@@ -38,4 +40,16 @@ public class StaffMemberController {
 
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping("/api/staffmember/{staffMemberId}")
+    public CreateStaffMemberResponse findById(
+            @PathVariable Long staffMemberId){
+        return staffMemberService.findById(staffMemberId);
+    }
+
+    @GetMapping("/api/staffmember")
+    public List<CreateStaffMemberResponse> findAll(){
+        return staffMemberService.findAll();
+    }
+
 }
