@@ -4,9 +4,19 @@ CREATE TABLE news (
     number_of_files INTEGER NOT NULL,
     total_size FLOAT(53) NOT NULL,
     news_date DATE NOT NULL,
-    location VARCHAR(255) NOT NULL,
 
-    PRIMARY KEY (news_id)
+    imported_by BIGINT NOT NULL,
+    ingested_by BIGINT NOT NULL,
+
+    PRIMARY KEY (news_id),
+
+    CONSTRAINT fk_news_importer
+        FOREIGN KEY (imported_by)
+        REFERENCES staff_member(member_id),
+
+    CONSTRAINT fk_news_ingestor
+        FOREIGN KEY (ingested_by)
+        REFERENCES staff_member(member_id)
 );
 
 CREATE TABLE cameraman (
@@ -31,6 +41,14 @@ CREATE TABLE staff_member (
     is_active BOOLEAN NOT NULL,
 
     PRIMARY KEY (member_id)
+);
+
+CREATE TABLE location (
+    location_id BIGINT GENERATED ALWAYS AS IDENTITY,
+    location_name VARCHAR(255) NOT NULL,
+    is_abroad BOOLEAN NOT NULL,
+
+    PRIMARY KEY (location_id)
 );
 
 CREATE TABLE app_user (
@@ -81,6 +99,22 @@ CREATE TABLE news_reporter (
         REFERENCES reporter(reporter_id)
 );
 
+CREATE TABLE news_location (
+    news_id BIGINT NOT NULL,
+    location_id BIGINT NOT NULL,
+
+    PRIMARY KEY (news_id, location_id),
+
+    CONSTRAINT fk_news_location_news
+        FOREIGN KEY (news_id)
+        REFERENCES news(news_id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_news_location_location
+        FOREIGN KEY (location_id)
+        REFERENCES location(location_id)
+);
+
 CREATE TABLE user_role (
     user_id BIGINT NOT NULL,
     role_id BIGINT NOT NULL,
@@ -98,34 +132,30 @@ CREATE TABLE user_role (
         ON DELETE CASCADE
 );
 
-CREATE TABLE news_importer (
-    news_id BIGINT NOT NULL,
-    imported_by BIGINT NOT NULL,
+-- FILTERING INDEXES
 
-    PRIMARY KEY (news_id, imported_by),
+CREATE INDEX idx_news_reporter_reporter
+ON news_reporter(reporter_id);
 
-    CONSTRAINT fk_news_importer_news
-        FOREIGN KEY (news_id)
-        REFERENCES news(news_id)
-        ON DELETE CASCADE,
+CREATE INDEX idx_news_cameraman_cameraman
+ON news_cameraman(cameraman_id);
 
-    CONSTRAINT fk_news_importer_staff
-        FOREIGN KEY (imported_by)
-        REFERENCES staff_member(member_id)
-);
+CREATE INDEX idx_news_location_location
+ON news_location(location_id);
 
-CREATE TABLE news_ingestor (
-    news_id BIGINT NOT NULL,
-    ingested_by BIGINT NOT NULL,
+CREATE INDEX idx_news_date_desc
+ON news(news_date DESC);
 
-    PRIMARY KEY (news_id, ingested_by),
+CREATE INDEX idx_news_imported_by
+ON news(imported_by);
 
-    CONSTRAINT fk_news_ingestor_news
-        FOREIGN KEY (news_id)
-        REFERENCES news(news_id)
-        ON DELETE CASCADE,
+CREATE INDEX idx_news_ingested_by
+ON news(ingested_by);
 
-    CONSTRAINT fk_news_ingestor_staff
-        FOREIGN KEY (ingested_by)
-        REFERENCES staff_member(member_id)
+-- FULL TEXT SEARCH INDEX (AMHARIC)
+
+CREATE INDEX news_title_fts_idx
+ON news
+USING gin (
+    to_tsvector('simple', title)
 );
