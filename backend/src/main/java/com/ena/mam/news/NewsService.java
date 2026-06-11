@@ -3,6 +3,7 @@ package com.ena.mam.news;
 import com.ena.mam.cameraman.Cameraman;
 import com.ena.mam.cameraman.CameramanRepository;
 import com.ena.mam.dto.request.CreateNewsRequest;
+import com.ena.mam.dto.request.NewsFilter;
 import com.ena.mam.dto.response.CreateNewsResponse;
 import com.ena.mam.exception.ResourceNotFoundException;
 import com.ena.mam.location.Location;
@@ -11,6 +12,9 @@ import com.ena.mam.reporter.Reporter;
 import com.ena.mam.reporter.ReporterRepository;
 import com.ena.mam.staffmember.StaffMember;
 import com.ena.mam.staffmember.StaffMemberRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.util.HashSet;
@@ -107,5 +111,60 @@ public class NewsService {
 
     public void delete(Long newsId){
         newsRepository.deleteById(newsId);
+    }
+
+    public Page<CreateNewsResponse> search(
+            NewsFilter filter,
+            Pageable pageable) {
+
+        Specification<News> spec =
+                Specification.allOf();
+
+        if (filter.reporterIds() != null &&
+                !filter.reporterIds().isEmpty()) {
+
+            spec = spec.and(
+                    NewsSpecification.hasReporters(
+                            filter.reporterIds()));
+        }
+
+        if (filter.cameramanIds() != null &&
+                !filter.cameramanIds().isEmpty()) {
+
+            spec = spec.and(
+                    NewsSpecification.hasCameramen(
+                            filter.cameramanIds()));
+        }
+
+        if (filter.locationIds() != null &&
+                !filter.locationIds().isEmpty()) {
+
+            spec = spec.and(
+                    NewsSpecification.hasLocations(
+                            filter.locationIds()));
+        }
+
+        if (filter.startDate() != null) {
+            spec = spec.and(
+                    NewsSpecification.hasNewsDateBetween(
+                            filter.startDate(),
+                            filter.effectiveEndDate()
+                    )
+            );
+        }
+
+        if (filter.importerId() != null) {
+            spec = spec.and(
+                    NewsSpecification.hasImporterId(filter.importerId()));
+        }
+
+        if (filter.importerId() != null) {
+            spec = spec.and(
+                    NewsSpecification.hasIngestorId(filter.ingestorId()));
+        }
+
+        return newsRepository
+                .findAll(spec, pageable)
+                .map(newsMapper::toResponse);
     }
 }
