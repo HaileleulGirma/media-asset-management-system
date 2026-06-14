@@ -11,14 +11,13 @@ import com.ena.mam.reporter.ReporterRepository;
 import com.ena.mam.staffmember.StaffMember;
 import com.ena.mam.staffmember.StaffMemberRepository;
 import com.github.javafaker.Faker;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 @Component
 public class DataSeeder implements CommandLineRunner {
@@ -28,6 +27,9 @@ public class DataSeeder implements CommandLineRunner {
     private final LocationRepository locationRepository;
     private final StaffMemberRepository staffMemberRepository;
     private final NewsRepository newsRepository;
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     private final Random random = new Random(42);
     private final Faker faker = new Faker(random);
@@ -49,7 +51,7 @@ public class DataSeeder implements CommandLineRunner {
     @Override
     public void run(String... args) {
 
-        System.out.println("Starting data seeding...");
+        System.out.println("Starting optimized JPA seeding...");
 
         seedReporters();
         seedCameramen();
@@ -61,158 +63,84 @@ public class DataSeeder implements CommandLineRunner {
     }
 
     private void seedReporters() {
-
-        List<Reporter> reporters = new ArrayList<>();
-
+        List<Reporter> list = new ArrayList<>();
         for (int i = 0; i < 100; i++) {
-
-            Reporter reporter = new Reporter();
-
-            reporter.setReporterName(
-                    faker.name().fullName()
-            );
-
-            reporter.setActive(true);
-
-            reporters.add(reporter);
+            Reporter r = new Reporter();
+            r.setReporterName(faker.name().fullName());
+            r.setActive(true);
+            list.add(r);
         }
-
-        reporterRepository.saveAll(reporters);
+        reporterRepository.saveAll(list);
+        reporterRepository.flush();
+        entityManager.clear();
     }
 
     private void seedCameramen() {
-
-        List<Cameraman> cameramen = new ArrayList<>();
-
+        List<Cameraman> list = new ArrayList<>();
         for (int i = 0; i < 100; i++) {
-
-            Cameraman cameraman = new Cameraman();
-
-            cameraman.setCameramanName(
-                    faker.name().fullName()
-            );
-
-            cameraman.setActive(true);
-
-            cameramen.add(cameraman);
+            Cameraman c = new Cameraman();
+            c.setCameramanName(faker.name().fullName());
+            c.setActive(true);
+            list.add(c);
         }
-
-        cameramanRepository.saveAll(cameramen);
+        cameramanRepository.saveAll(list);
+        cameramanRepository.flush();
+        entityManager.clear();
     }
 
     private void seedLocations() {
-
-        List<Location> locations = new ArrayList<>();
-
+        List<Location> list = new ArrayList<>();
         for (int i = 0; i < 50; i++) {
-
-            Location location = new Location();
-
-            location.setLocationName(
-                    faker.country().capital()
-            );
-
-            location.setAbroad(
-                    random.nextBoolean()
-            );
-
-            locations.add(location);
+            Location l = new Location();
+            l.setLocationName(faker.country().capital());
+            l.setAbroad(random.nextBoolean());
+            list.add(l);
         }
-
-        locationRepository.saveAll(locations);
+        locationRepository.saveAll(list);
+        locationRepository.flush();
+        entityManager.clear();
     }
 
     private void seedStaffMembers() {
-
-        List<StaffMember> staffMembers = new ArrayList<>();
-
+        List<StaffMember> list = new ArrayList<>();
         for (int i = 0; i < 45; i++) {
-
-            StaffMember staffMember = new StaffMember();
-
-            staffMember.setStaffMemberName(
-                    faker.name().fullName()
-            );
-
-            staffMember.setActive(true);
-
-            staffMembers.add(staffMember);
+            StaffMember s = new StaffMember();
+            s.setStaffMemberName(faker.name().fullName());
+            s.setActive(true);
+            list.add(s);
         }
-
-        staffMemberRepository.saveAll(staffMembers);
+        staffMemberRepository.saveAll(list);
+        staffMemberRepository.flush();
+        entityManager.clear();
     }
 
     private void seedNews() {
 
-        List<Reporter> reporters =
-                reporterRepository.findAll();
+        List<Reporter> reporters = reporterRepository.findAll();
+        List<Cameraman> cameramen = cameramanRepository.findAll();
+        List<Location> locations = locationRepository.findAll();
+        List<StaffMember> staffMembers = staffMemberRepository.findAll();
 
-        List<Cameraman> cameramen =
-                cameramanRepository.findAll();
-
-        List<Location> locations =
-                locationRepository.findAll();
-
-        List<StaffMember> staffMembers =
-                staffMemberRepository.findAll();
-
-        List<News> batch = new ArrayList<>();
-
-        int totalRecords = 10_000; // change to 100_000 or 1_000_000 later
+        int totalRecords = 10_000; // scale to 1M later
         int batchSize = 1000;
+
+        List<News> batch = new ArrayList<>(batchSize);
 
         for (int i = 0; i < totalRecords; i++) {
 
             News news = new News();
 
-            news.setTitle(
-                    faker.lorem().sentence(
-                            3 + random.nextInt(12)
-                    )
-            );
+            news.setTitle(faker.lorem().sentence(3 + random.nextInt(12)));
+            news.setNewsDate(LocalDate.now().minusDays(random.nextInt(3650)));
+            news.setNumberOfFiles(1 + random.nextInt(100));
+            news.setTotalSize(10 + random.nextDouble() * 5000);
 
-            news.setNewsDate(
-                    LocalDate.now()
-                            .minusDays(
-                                    random.nextInt(3650)
-                            )
-            );
+            news.setImporter(staffMembers.get(random.nextInt(staffMembers.size())));
+            news.setIngestor(staffMembers.get(random.nextInt(staffMembers.size())));
 
-            news.setNumberOfFiles(
-                    1 + random.nextInt(100)
-            );
-
-            news.setTotalSize(
-                    10 + random.nextDouble() * 5000
-            );
-
-            news.setReporters(
-                    randomSubset(reporters, 10)
-            );
-
-            news.setCameramen(
-                    randomSubset(cameramen, 10)
-            );
-
-            news.setLocations(
-                    randomSubset(locations, 5)
-            );
-
-            news.setImporter(
-                    staffMembers.get(
-                            random.nextInt(
-                                    staffMembers.size()
-                            )
-                    )
-            );
-
-            news.setIngestor(
-                    staffMembers.get(
-                            random.nextInt(
-                                    staffMembers.size()
-                            )
-                    )
-            );
+            news.setReporters(randomSubset(reporters, 10));
+            news.setCameramen(randomSubset(cameramen, 10));
+            news.setLocations(randomSubset(locations, 5));
 
             batch.add(news);
 
@@ -220,39 +148,30 @@ public class DataSeeder implements CommandLineRunner {
 
                 newsRepository.saveAll(batch);
 
+                newsRepository.flush();     // 🔥 key improvement
+                entityManager.clear();      // 🔥 prevents memory explosion
+
                 batch.clear();
 
-                System.out.println(
-                        "Inserted "
-                                + (i + 1)
-                                + " news records"
-                );
+                System.out.println("Inserted " + (i + 1) + " news records");
             }
         }
 
         if (!batch.isEmpty()) {
             newsRepository.saveAll(batch);
+            newsRepository.flush();
+            entityManager.clear();
         }
     }
 
-    private <T> HashSet<T> randomSubset(
-            List<T> list,
-            int maxSize
-    ) {
+    private <T> Set<T> randomSubset(List<T> list, int maxSize) {
 
-        HashSet<T> result = new HashSet<>();
+        Set<T> result = new HashSet<>();
 
         int size = 1 + random.nextInt(maxSize);
 
         while (result.size() < size) {
-
-            result.add(
-                    list.get(
-                            random.nextInt(
-                                    list.size()
-                            )
-                    )
-            );
+            result.add(list.get(random.nextInt(list.size())));
         }
 
         return result;
