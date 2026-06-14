@@ -13,7 +13,9 @@ import com.ena.mam.reporter.ReporterRepository;
 import com.ena.mam.staffmember.StaffMember;
 import com.ena.mam.staffmember.StaffMemberRepository;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
@@ -113,35 +115,29 @@ public class NewsService {
         newsRepository.deleteById(newsId);
     }
 
-    public Page<CreateNewsResponse> search(
-            NewsFilter filter,
-            Pageable pageable) {
+    public Page<CreateNewsResponse> search(NewsFilter filter, Pageable pageable) {
 
-        Specification<News> spec =
-                Specification.allOf();
+        Specification<News> spec = Specification.allOf();
 
-        if (filter.reporterIds() != null &&
-                !filter.reporterIds().isEmpty()) {
-
-            spec = spec.and(
-                    NewsSpecification.hasReporters(
-                            filter.reporterIds()));
+        // Loop through each reporter ID to enforce an "AND" condition
+        if (filter.reporterIds() != null && !filter.reporterIds().isEmpty()) {
+            for (Long reporterId : filter.reporterIds()) {
+                spec = spec.and(NewsSpecification.hasReporter(reporterId));
+            }
         }
 
-        if (filter.cameramanIds() != null &&
-                !filter.cameramanIds().isEmpty()) {
-
-            spec = spec.and(
-                    NewsSpecification.hasCameramen(
-                            filter.cameramanIds()));
+        // Loop through each cameraman ID to enforce an "AND" condition
+        if (filter.cameramanIds() != null && !filter.cameramanIds().isEmpty()) {
+            for (Long cameramanId : filter.cameramanIds()) {
+                spec = spec.and(NewsSpecification.hasCameraman(cameramanId));
+            }
         }
 
-        if (filter.locationIds() != null &&
-                !filter.locationIds().isEmpty()) {
-
-            spec = spec.and(
-                    NewsSpecification.hasLocations(
-                            filter.locationIds()));
+        // Loop through each location ID to enforce an "AND" condition
+        if (filter.locationIds() != null && !filter.locationIds().isEmpty()) {
+            for (Long locationId : filter.locationIds()) {
+                spec = spec.and(NewsSpecification.hasLocation(locationId));
+            }
         }
 
         if (filter.startDate() != null) {
@@ -154,17 +150,25 @@ public class NewsService {
         }
 
         if (filter.importerId() != null) {
-            spec = spec.and(
-                    NewsSpecification.hasImporterId(filter.importerId()));
+            spec = spec.and(NewsSpecification.hasImporterId(filter.importerId()));
         }
 
-        if (filter.importerId() != null) {
-            spec = spec.and(
-                    NewsSpecification.hasIngestorId(filter.ingestorId()));
+        if (filter.ingestorId() != null) {
+            spec = spec.and(NewsSpecification.hasIngestorId(filter.ingestorId()));
         }
+
+        if (filter.searchTerm() != null && !filter.searchTerm().isBlank()) {
+            spec = spec.and(NewsSpecification.hasSearchTerm(filter.searchTerm()));
+        }
+
+        Pageable sortedPageable = PageRequest.of(
+                pageable.getPageNumber(),
+                pageable.getPageSize(),
+                Sort.by("newsDate").descending()
+        );
 
         return newsRepository
-                .findAll(spec, pageable)
+                .findAll(spec, sortedPageable)
                 .map(newsMapper::toResponse);
     }
 }
