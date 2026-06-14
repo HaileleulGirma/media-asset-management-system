@@ -9,7 +9,7 @@ public record NewsFilter(
         Set<Long> locationIds,
         LocalDate startDate,
         LocalDate endDate,
-        String title,
+        String searchTerm,
         Long importerId,
         Long ingestorId
 ) {
