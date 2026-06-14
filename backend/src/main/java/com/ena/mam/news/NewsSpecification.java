@@ -1,58 +1,77 @@
 package com.ena.mam.news;
 
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Subquery;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.time.LocalDate;
-import java.util.Set;
 
 public class NewsSpecification {
 
-    public static Specification<News> hasReporters(
-            Set<Long> reporterIds) {
+    // Changed from Set<Long> to a single Long id
+    public static Specification<News> hasReporter(Long reporterId) {
+        return (root, query, cb) -> {
+            Subquery<Long> subquery = query.subquery(Long.class);
+            Root<News> subRoot = subquery.from(News.class);
+            Join<Object, Object> reporters = subRoot.join("reporters");
 
-        return (root, query, cb) ->
-                root.join("reporters")
-                        .get("reporterId")
-                        .in(reporterIds);
+            subquery.select(subRoot.get("newsId"))
+                    .where(cb.equal(reporters.get("reporterId"), reporterId));
+
+            return root.get("newsId").in(subquery);
+        };
     }
 
-    public static Specification<News> hasCameramen(
-            Set<Long> cameramanIds) {
+    // Changed from Set<Long> to a single Long id
+    public static Specification<News> hasCameraman(Long cameramanId) {
+        return (root, query, cb) -> {
+            Subquery<Long> subquery = query.subquery(Long.class);
+            Root<News> subRoot = subquery.from(News.class);
+            Join<Object, Object> cameramen = subRoot.join("cameramen");
 
-        return (root, query, cb) ->
-                root.join("cameramen")
-                        .get("cameramanId")
-                        .in(cameramanIds);
+            subquery.select(subRoot.get("newsId"))
+                    .where(cb.equal(cameramen.get("cameramanId"), cameramanId));
+
+            return root.get("newsId").in(subquery);
+        };
     }
 
-    public static Specification<News> hasLocations(
-            Set<Long> locationIds) {
+    // Changed from Set<Long> to a single Long id
+    public static Specification<News> hasLocation(Long locationId) {
+        return (root, query, cb) -> {
+            Subquery<Long> subquery = query.subquery(Long.class);
+            Root<News> subRoot = subquery.from(News.class);
+            Join<Object, Object> locations = subRoot.join("locations");
 
-        return (root, query, cb) ->
-                root.join("locations")
-                        .get("locationId")
-                        .in(locationIds);
+            subquery.select(subRoot.get("newsId"))
+                    .where(cb.equal(locations.get("locationId"), locationId));
+
+            return root.get("newsId").in(subquery);
+        };
     }
 
-    public static Specification<News> hasNewsDateBetween(
-            LocalDate startDate,
-            LocalDate endDate) {
-
-        return (root, query, cb) ->
-                cb.between(
-                        root.get("newsDate"),
-                        startDate,
-                        endDate
-                );
+    public static Specification<News> hasNewsDateBetween(LocalDate startDate, LocalDate endDate) {
+        return (root, query, cb) -> cb.between(root.get("newsDate"), startDate, endDate);
     }
 
     public static Specification<News> hasImporterId(Long importerId) {
-        return (root, query, cb) ->
-                cb.equal(root.get("importerId"), importerId);
+        return (root, query, cb) -> cb.equal(root.get("importerId").get("memberId"), importerId);
     }
 
     public static Specification<News> hasIngestorId(Long ingestorId) {
+        return (root, query, cb) -> cb.equal(root.get("ingestorId").get("memberId"), ingestorId);
+    }
+
+    public static Specification<News> hasSearchTerm(String searchTerm) {
         return (root, query, cb) ->
-                cb.equal(root.get("importerId"), ingestorId);
+                cb.isTrue(
+                        cb.function(
+                                "fts_match",
+                                Boolean.class,
+                                root.get("title"),
+                                cb.literal(searchTerm)
+                        )
+                );
     }
 }
