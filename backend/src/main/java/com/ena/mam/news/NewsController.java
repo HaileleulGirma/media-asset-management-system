@@ -53,7 +53,7 @@ public class NewsController {
             LocalDate endDate,
 
             @RequestParam(required = false)
-            String title,
+            String searchTerm,
 
             @RequestParam(required = false)
             Long importerId,
@@ -71,7 +71,7 @@ public class NewsController {
                         locationIds,
                         startDate,
                         endDate,
-                        title,
+                        searchTerm,
                         importerId,
                         ingestorId
                 );
