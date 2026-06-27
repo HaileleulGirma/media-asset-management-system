@@ -21,7 +21,7 @@ public class NewsController {
         this.newsService = newsService;
     }
 
-    @PostMapping("api/news")
+    @PostMapping("/api/news")
     public CreateNewsResponse create(@Valid @RequestBody CreateNewsRequest request){
         return newsService.create(request);
     }
