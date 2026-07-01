@@ -1,5 +1,9 @@
 package com.ena.mam.seed;
 
+import com.ena.mam.approle.AppRole;
+import com.ena.mam.approle.AppRoleRepository;
+import com.ena.mam.appuser.AppUser;
+import com.ena.mam.appuser.AppUserRepository;
 import com.ena.mam.cameraman.Cameraman;
 import com.ena.mam.cameraman.CameramanRepository;
 import com.ena.mam.location.Location;
@@ -14,6 +18,7 @@ import com.github.javafaker.Faker;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
@@ -27,6 +32,9 @@ public class DataSeeder implements CommandLineRunner {
     private final LocationRepository locationRepository;
     private final StaffMemberRepository staffMemberRepository;
     private final NewsRepository newsRepository;
+    private final AppRoleRepository appRoleRepository;
+    private final AppUserRepository appUserRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -39,13 +47,16 @@ public class DataSeeder implements CommandLineRunner {
             CameramanRepository cameramanRepository,
             LocationRepository locationRepository,
             StaffMemberRepository staffMemberRepository,
-            NewsRepository newsRepository
+            NewsRepository newsRepository, AppRoleRepository appRoleRepository, AppUserRepository appUserRepository, PasswordEncoder passwordEncoder
     ) {
         this.reporterRepository = reporterRepository;
         this.cameramanRepository = cameramanRepository;
         this.locationRepository = locationRepository;
         this.staffMemberRepository = staffMemberRepository;
         this.newsRepository = newsRepository;
+        this.appRoleRepository = appRoleRepository;
+        this.appUserRepository = appUserRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
@@ -53,6 +64,7 @@ public class DataSeeder implements CommandLineRunner {
 
         System.out.println("Starting optimized JPA seeding...");
 
+        seedRolesAndUsers();
         seedReporters();
         seedCameramen();
         seedLocations();
@@ -175,5 +187,34 @@ public class DataSeeder implements CommandLineRunner {
         }
 
         return result;
+    }
+
+    private void seedRolesAndUsers() {
+        AppRole adminRole  = getOrCreateRole("ADMIN");
+        AppRole staffRole  = getOrCreateRole("STAFF");
+        AppRole viewerRole = getOrCreateRole("VIEWER");
+
+        getOrCreateUser("admin",  "admin123",  "System Administrator", Set.of(adminRole));
+        getOrCreateUser("staff1", "staff123",  "Staff User",           Set.of(staffRole));
+        getOrCreateUser("viewer1","viewer123", "Reporter Viewer",      Set.of(viewerRole));
+    }
+
+    private AppRole getOrCreateRole(String name) {
+        return appRoleRepository.findByRoleName(name)
+                .orElseGet(() -> {
+                    AppRole role = new AppRole();
+                    role.setRoleName(name);
+                    return appRoleRepository.save(role);
+                });
+    }
+
+    private void getOrCreateUser(String username, String rawPassword, String fullName, Set<AppRole> roles) {
+        if (appUserRepository.findByUsernameWithRoles(username).isPresent()) return;
+        AppUser user = new AppUser();
+        user.setUsername(username);
+        user.setPassword(passwordEncoder.encode(rawPassword));
+        user.setFullName(fullName);
+        user.setRoles(roles);
+        appUserRepository.save(user);
     }
 }
