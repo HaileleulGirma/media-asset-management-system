@@ -4,6 +4,7 @@ import com.ena.mam.dto.request.CreateStaffMemberRequest;
 import com.ena.mam.dto.response.CreateStaffMemberResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -17,6 +18,7 @@ public class StaffMemberController {
         this.staffMemberService = staffMemberService;
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/api/staffmember/")
     public CreateStaffMemberResponse create(
             @Valid @RequestBody CreateStaffMemberRequest request
@@ -25,6 +27,7 @@ public class StaffMemberController {
 
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/api/staffmember/{staffMemberId}")
     public CreateStaffMemberResponse update(
            @PathVariable Long staffMemberId, @Valid @RequestBody CreateStaffMemberRequest request
@@ -32,6 +35,7 @@ public class StaffMemberController {
         return staffMemberService.update(staffMemberId, request);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/api/staffmember/{staffMemberId}")
     public ResponseEntity<Void> delete(
             @PathVariable Long staffMemberId
@@ -41,12 +45,14 @@ public class StaffMemberController {
         return ResponseEntity.noContent().build();
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
     @GetMapping("/api/staffmember/{staffMemberId}")
     public CreateStaffMemberResponse findById(
             @PathVariable Long staffMemberId){
         return staffMemberService.findById(staffMemberId);
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
     @GetMapping("/api/staffmember")
     public List<CreateStaffMemberResponse> findAll(){
         return staffMemberService.findAll();
