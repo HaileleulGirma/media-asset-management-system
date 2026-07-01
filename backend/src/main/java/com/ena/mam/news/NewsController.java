@@ -7,6 +7,7 @@ import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -21,11 +22,13 @@ public class NewsController {
         this.newsService = newsService;
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
     @PostMapping("/api/news")
     public CreateNewsResponse create(@Valid @RequestBody CreateNewsRequest request){
         return newsService.create(request);
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
     @DeleteMapping("/api/news/{newsId}")
     public ResponseEntity<Void> delete(
             @PathVariable Long newsId
@@ -35,6 +38,7 @@ public class NewsController {
         return ResponseEntity.noContent().build();
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'VIEWER')")
     @GetMapping("/api/news")
     public Page<CreateNewsResponse> search(
             @RequestParam(required = false)
