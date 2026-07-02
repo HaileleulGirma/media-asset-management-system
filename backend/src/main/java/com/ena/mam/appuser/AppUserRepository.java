@@ -10,6 +10,6 @@ import java.util.Optional;
 @Repository
 public interface AppUserRepository extends JpaRepository<AppUser, Long> {
 
-    @Query("SELECT u FROM AppUser u LEFT JOIN FETCH u.roles WHERE u.username = :username")
+    @Query("SELECT u FROM AppUser u LEFT JOIN FETCH u.role WHERE u.username = :username")
     Optional<AppUser> findByUsernameWithRoles(@Param("username") String username);
 }
