@@ -194,9 +194,9 @@ public class DataSeeder implements CommandLineRunner {
         AppRole staffRole  = getOrCreateRole("STAFF");
         AppRole viewerRole = getOrCreateRole("VIEWER");
 
-        getOrCreateUser("admin",  "admin123",  "System Administrator", Set.of(adminRole));
-        getOrCreateUser("staff1", "staff123",  "Staff User",           Set.of(staffRole));
-        getOrCreateUser("viewer1","viewer123", "Reporter Viewer",      Set.of(viewerRole));
+        getOrCreateUser("admin",   "admin123",  "System Administrator", adminRole);
+        getOrCreateUser("staff1",  "staff123",  "Staff User",           staffRole);
+        getOrCreateUser("viewer1", "viewer123", "Reporter Viewer",      viewerRole);
     }
 
     private AppRole getOrCreateRole(String name) {
@@ -208,13 +208,13 @@ public class DataSeeder implements CommandLineRunner {
                 });
     }
 
-    private void getOrCreateUser(String username, String rawPassword, String fullName, Set<AppRole> roles) {
+    private void getOrCreateUser(String username, String rawPassword, String fullName, AppRole role) {
         if (appUserRepository.findByUsernameWithRoles(username).isPresent()) return;
         AppUser user = new AppUser();
         user.setUsername(username);
         user.setPassword(passwordEncoder.encode(rawPassword));
         user.setFullName(fullName);
-        user.setRoles(roles);
+        user.setRole(role);
         appUserRepository.save(user);
     }
 }
