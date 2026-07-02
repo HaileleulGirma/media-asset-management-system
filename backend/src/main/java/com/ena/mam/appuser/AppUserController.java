@@ -27,29 +27,29 @@ public class AppUserController {
     }
 
     @PreAuthorize("hasRole('ADMIN')")
-    @PutMapping("/api/appuser/{appuserId}")
+    @PutMapping("/api/appuser/{appUserId}")
     public CreateAppUserResponse update(
             @Valid @RequestBody CreateAppUserRequest request,
-            @PathVariable Long appuserId)
+            @PathVariable Long appUserId)
     {
-        return appUserService.update(appuserId, request);
+        return appUserService.update(appUserId, request);
     }
 
     @PreAuthorize("hasRole('ADMIN')")
-    @DeleteMapping("/api/appuser/{appuserId}")
-    public ResponseEntity<Void> update(
-            @PathVariable Long appuserId)
+    @DeleteMapping("/api/appuser/{appUserId}")
+    public ResponseEntity<Void> delete(
+            @PathVariable Long appUserId)
     {
-        appUserService.delete(appuserId);
+        appUserService.delete(appUserId);
         return ResponseEntity.noContent().build();
     }
 
     @PreAuthorize("hasRole('ADMIN')")
-    @GetMapping("/api/appuser/{appuserId}")
-    public CreateAppUserResponse update(
-            @PathVariable Long appuserId, @Valid @RequestBody CreateAppUserRequest request)
+    @GetMapping("/api/appuser/{appUserId}")
+    public CreateAppUserResponse findById(
+            @PathVariable Long appUserId)
     {
-        return appUserService.update(appuserId, request);
+        return appUserService.findById(appUserId);
     }
 
     @PreAuthorize("hasRole('ADMIN')")
