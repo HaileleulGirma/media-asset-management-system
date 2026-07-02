@@ -55,9 +55,14 @@ CREATE TABLE app_user (
                           user_id BIGINT GENERATED ALWAYS AS IDENTITY,
                           username VARCHAR(255) NOT NULL UNIQUE,
                           password VARCHAR(255) NOT NULL,
-                          full_name VARCHAR(255) NOT NULL,
+                          full_name VARCHAR(255) NOT NULL UNIQUE,
+                          role_id BIGINT NOT NULL,
 
-                          PRIMARY KEY (user_id)
+                          PRIMARY KEY (user_id),
+
+                          CONSTRAINT fk_user_role
+                              FOREIGN KEY (role_id)
+                                  REFERENCES app_role(role_id)
 );
 
 CREATE TABLE app_role (
@@ -151,6 +156,9 @@ CREATE INDEX idx_news_imported_by
 
 CREATE INDEX idx_news_ingested_by
     ON news(ingested_by);
+
+CREATE INDEX idx_app_user_role_id
+    ON app_user(role_id);
 
 -- FULL TEXT SEARCH INDEX (AMHARIC)
 
