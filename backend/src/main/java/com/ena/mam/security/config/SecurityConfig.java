@@ -45,9 +45,7 @@ public class SecurityConfig {
                 .map(user -> new org.springframework.security.core.userdetails.User(
                         user.getUsername(),
                         user.getPassword(),
-                        user.getRoles().stream()
-                                .map(role -> new SimpleGrantedAuthority("ROLE_" + role.getRoleName()))
-                                .toList()
+                        java.util.List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().getRoleName()))
                 ))
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
     }
