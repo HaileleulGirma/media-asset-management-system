@@ -3,9 +3,6 @@ package com.ena.mam.appuser;
 import com.ena.mam.approle.AppRole;
 import jakarta.persistence.*;
 
-import java.util.HashSet;
-import java.util.Set;
-
 @Entity
 @Table(name = "app_user")
 public class AppUser {
@@ -25,13 +22,10 @@ public class AppUser {
     @Column(name = "full_name")
     private String fullName;
 
-    @ManyToMany
-    @JoinTable(
-            name = "user_role",
-            joinColumns = @JoinColumn(name = "user_id"),
-            inverseJoinColumns = @JoinColumn(name = "role_id")
-    )
-    private Set<AppRole> roles = new HashSet<>();
+    @ManyToOne
+    @JoinColumn(name = "role_id")
+    private AppRole role;
+
 
     public Long getUserId() {
         return userId;
@@ -61,11 +55,11 @@ public class AppUser {
         this.fullName = fullName;
     }
 
-    public Set<AppRole> getRoles() {
-        return roles;
+    public AppRole getRole() {
+        return role;
     }
 
-    public void setRoles(Set<AppRole> roles) {
-        this.roles = roles;
+    public void setRole(AppRole role) {
+        this.role = role;
     }
 }
