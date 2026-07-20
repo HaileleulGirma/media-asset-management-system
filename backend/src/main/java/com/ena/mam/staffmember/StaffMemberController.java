@@ -54,8 +54,10 @@ public class StaffMemberController {
 
     @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
     @GetMapping("/api/staffmember")
-    public List<CreateStaffMemberResponse> findAll(){
-        return staffMemberService.findAll();
+    public List<CreateStaffMemberResponse> findAll(
+            @RequestParam(required = false, defaultValue = "true") Boolean activeOnly
+    ){
+        return staffMemberService.findAll(activeOnly);
     }
 
 }
