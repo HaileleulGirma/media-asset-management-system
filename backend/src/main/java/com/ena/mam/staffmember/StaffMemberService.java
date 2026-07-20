@@ -43,9 +43,12 @@ public class StaffMemberService {
         return staffMemberMapper.toResponse(staffMember);
     }
 
-    public List<CreateStaffMemberResponse> findAll(){
-        return staffMemberRepository.findAll()
-                .stream()
+    public List<CreateStaffMemberResponse> findAll(Boolean activeOnly){
+        List<StaffMember> staffMembers = (activeOnly != null && activeOnly)
+                ? staffMemberRepository.findByIsActiveTrue()
+                : staffMemberRepository.findAll();
+
+        return staffMembers.stream()
                 .map(staffMemberMapper::toResponse)
                 .toList();
     }
