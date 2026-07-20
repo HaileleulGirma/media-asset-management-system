@@ -45,9 +45,12 @@ public class ReporterService {
         return reporterMapper.toResponse(reporter);
     }
 
-    public List<CreateReporterResponse> findAll(){
-        return reporterRepository.findAll()
-                .stream()
+    public List<CreateReporterResponse> findAll(Boolean onlyActive){
+        List<Reporter> reporters = (onlyActive != null && onlyActive)
+                ? reporterRepository.findByIsActiveTrue()
+                : reporterRepository.findAll();
+
+        return reporters.stream()
                 .map(reporterMapper::toResponse)
                 .toList();
 
