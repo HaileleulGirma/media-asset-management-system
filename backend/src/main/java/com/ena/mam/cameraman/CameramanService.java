@@ -42,9 +42,12 @@ public class CameramanService {
         return cameramanMapper.toResponse(cameraman);
     }
 
-    public List<CreateCameramanResponse> findAll(){
-        return cameramanRepository.findAll()
-                .stream()
+    public List<CreateCameramanResponse> findAll(Boolean activeOnly){
+        List<Cameraman> cameramen = (activeOnly != null && activeOnly)
+                ? cameramanRepository.findByIsActiveTrue()
+                : cameramanRepository.findAll();
+
+        return cameramen.stream()
                 .map(cameramanMapper::toResponse)
                 .toList();
     }
