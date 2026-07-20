@@ -55,7 +55,9 @@ public class CameramanController {
 
     @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
     @GetMapping("/api/cameraman")
-    public List<CreateCameramanResponse> findAll(){
-        return cameramanService.findAll();
+    public List<CreateCameramanResponse> findAll(
+            @RequestParam(required = false, defaultValue = "false") boolean activeOnly
+    ){
+        return cameramanService.findAll(activeOnly);
     }
 }
