@@ -54,7 +54,9 @@ public class ReporterController {
 
     @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
     @GetMapping("/api/reporter")
-    public List<CreateReporterResponse> findAll() {
-        return reporterService.findAll();
+    public List<CreateReporterResponse> findAll(
+            @RequestParam(required = false, defaultValue = "true") boolean onlyActive
+    ) {
+        return reporterService.findAll(onlyActive);
     }
 }
