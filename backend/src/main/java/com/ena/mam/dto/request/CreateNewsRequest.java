@@ -14,6 +14,8 @@ public record CreateNewsRequest(
         LocalDate newsDate,
         Set<Long> cameramanIds,
         Set<Long> reporterIds,
+        @NotBlank(message = "file path section cannot be blank.")
+        String filePath,
         @NotBlank(message = "importer section cannot be blank.")
         Long importerId,
         Long ingestorId,
