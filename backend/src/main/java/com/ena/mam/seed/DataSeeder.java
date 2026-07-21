@@ -143,7 +143,15 @@ public class DataSeeder implements CommandLineRunner {
             News news = new News();
 
             news.setTitle(faker.lorem().sentence(3 + random.nextInt(12)));
-            news.setNewsDate(LocalDate.now().minusDays(random.nextInt(3650)));
+            LocalDate newsDate = LocalDate.now().minusDays(random.nextInt(3650));
+
+            news.setNewsDate(newsDate);
+            news.setFilePath(String.format(
+                    "/mnt/media/%d/%02d/%02d",
+                    newsDate.getYear(),
+                    newsDate.getMonthValue(),
+                    newsDate.getDayOfMonth()
+            ));
             news.setNumberOfFiles(1 + random.nextInt(100));
             news.setTotalSize(10 + random.nextDouble() * 5000);
 
