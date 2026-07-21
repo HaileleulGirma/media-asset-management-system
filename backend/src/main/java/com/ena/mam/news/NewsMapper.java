@@ -26,6 +26,7 @@ public class NewsMapper {
         news.setNewsDate(request.newsDate());
         news.setCameramen(cameramen);
         news.setReporters(reporters);
+        news.setFilePath(request.filePath());
         news.setImporter(importer);
         news.setIngestor(ingestor);
         news.setLocations(location);
@@ -57,6 +58,8 @@ public class NewsMapper {
                         .stream()
                         .map(Location::getLocationId)
                         .collect(Collectors.toSet()),
+
+                news.getFilePath(),
 
                 news.getImporter().getStaffMemberId(),
 
