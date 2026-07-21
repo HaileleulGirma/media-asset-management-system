@@ -25,6 +25,9 @@ public class News {
     @Column(name = "title")
     private String title;
 
+    @Column(name = "file_path")
+    private String filePath;
+
     @Column(name = "number_of_files")
     private Integer numberOfFiles;
 
@@ -146,4 +149,11 @@ public class News {
     }
 
 
+    public String getFilePath() {
+        return filePath;
+    }
+
+    public void setFilePath(String filePath) {
+        this.filePath = filePath;
+    }
 }
