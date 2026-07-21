@@ -16,6 +16,8 @@ public record CreateNewsResponse(
 
         Set<Long> locationIds,
 
+        String filePath,
+
         Long importerId,
 
         Long ingestorId,
