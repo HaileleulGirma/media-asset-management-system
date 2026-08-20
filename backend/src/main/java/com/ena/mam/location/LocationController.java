@@ -28,7 +28,7 @@ public class LocationController {
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/api/location/{locationId}")
     public CreateLocationResponse update(
-            @PathVariable @RequestParam Long locationId, @Valid @RequestBody CreateLocationRequest request
+            @PathVariable Long locationId, @Valid @RequestBody CreateLocationRequest request
     ){
         return locationService.update(locationId, request);
     }
@@ -50,10 +50,11 @@ public class LocationController {
         return locationService.findLocation(locationId);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF','VIEWER')")
     @GetMapping("/api/location")
     public List<CreateLocationResponse> findAll(
+            @RequestParam(required = false, defaultValue = "false") boolean abroadOnly
     ){
-        return locationService.findAll();
+        return locationService.findAll(abroadOnly);
     }
 }
