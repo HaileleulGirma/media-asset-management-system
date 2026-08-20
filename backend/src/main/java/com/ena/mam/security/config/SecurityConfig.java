@@ -60,7 +60,17 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
+                                .requestMatchers("/",
+                                        "/index.html",
+                                        "/news.html",
+                                        "/reporters.html",
+                                        "/cameramen.html",
+                                        "/locations.html",
+                                        "/staff.html",
+                                        "/css/**",
+                                        "/js/**").permitAll()
                         .anyRequest().authenticated()
+//                                .anyRequest().permitAll()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider())
