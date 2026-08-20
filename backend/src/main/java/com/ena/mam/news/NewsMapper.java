@@ -37,36 +37,19 @@ public class NewsMapper {
     }
 
     public CreateNewsResponse toResponse(News news) {
-
         return new CreateNewsResponse(
                 news.getNewsId(),
                 news.getNewsDate(),
-
-                news.getCameramen()
-                        .stream()
-                        .map(Cameraman::getCameramanId)
-                        .collect(Collectors.toSet()),
-
-                news.getReporters()
-                        .stream()
-                        .map(Reporter::getReporterId)
-                        .collect(Collectors.toSet()),
-
+                news.getCameramen().stream().map(Cameraman::getCameramanId).collect(Collectors.toSet()),
+                news.getReporters().stream().map(Reporter::getReporterId).collect(Collectors.toSet()),
                 news.getTitle(),
-
-                news.getLocations()
-                        .stream()
-                        .map(Location::getLocationId)
-                        .collect(Collectors.toSet()),
-
+                news.getLocations().stream().map(Location::getLocationId).collect(Collectors.toSet()),
                 news.getFilePath(),
-
                 news.getImporter().getStaffMemberId(),
-
-                news.getIngestor().getStaffMemberId(),
-
+                news.getIngestor() != null ? news.getIngestor().getStaffMemberId() : null,
                 news.getNumberOfFiles(),
-                news.getTotalSize()
+                news.getTotalSize(),
+                news.getVersion()
         );
     }
 
@@ -79,7 +62,14 @@ public class NewsMapper {
             StaffMember ingestor,
             Set<Location> locations) {
 
+        // Core fields
         news.setTitle(request.title());
+        news.setNewsDate(request.newsDate());
+        news.setFilePath(request.filePath());
+        news.setNumberOfFiles(request.numberOfFiles());
+        news.setTotalSize(request.totalSize());
+
+        // Relationships
         news.setCameramen(cameramen);
         news.setReporters(reporters);
         news.setImporter(importer);
