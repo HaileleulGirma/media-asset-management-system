@@ -6,4 +6,5 @@ import java.util.List;
 
 public interface CameramanRepository extends JpaRepository<Cameraman, Long>{
     List <Cameraman> findByIsActiveTrue();
+    List <Cameraman> findByIsActiveFalse();
 }
