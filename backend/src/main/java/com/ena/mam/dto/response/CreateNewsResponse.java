@@ -24,6 +24,8 @@ public record CreateNewsResponse(
 
         Integer numberOfFiles,
 
-        Double totalSize
+        Double totalSize,
+
+        Long version
 ) {
 }
