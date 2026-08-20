@@ -52,11 +52,11 @@ public class ReporterController {
        return reporterService.findReporter(reporterId);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'VIEWER')")
     @GetMapping("/api/reporter")
     public List<CreateReporterResponse> findAll(
-            @RequestParam(required = false, defaultValue = "true") boolean onlyActive
+            @RequestParam(required = false, defaultValue = "true") boolean activeOnly
     ) {
-        return reporterService.findAll(onlyActive);
+        return reporterService.findAll(activeOnly);
     }
 }
