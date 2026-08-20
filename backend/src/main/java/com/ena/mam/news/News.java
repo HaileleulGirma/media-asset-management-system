@@ -37,6 +37,13 @@ public class News {
     @Column(name = "news_date")
     private LocalDate newsDate;
 
+    @Version
+    @Column(name = "version")
+    private Long version;
+
+    public Long getVersion() {
+        return version;
+    }
 
     @ManyToMany
     @JoinTable(
