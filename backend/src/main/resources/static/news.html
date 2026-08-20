@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>News — MAM</title>
+    <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+<div class="app-shell">
+    <div id="app-nav"></div>
+
+    <div class="main-content main-content--wide">
+
+        <div class="tab-bar" id="tab-bar">
+            <button type="button" id="tab-search-btn" class="tab-btn">Search</button>
+            <button type="button" id="tab-add-btn" class="tab-btn hidden">Add news item</button>
+        </div>
+
+        <!-- Create News panel: entire tab hidden for Viewer role via news.js -->
+        <div id="create-news-panel" class="panel hidden">
+            <h2>Add news item</h2>
+
+            <div id="create-news-alert" class="alert"></div>
+
+            <form id="create-news-form" novalidate>
+                <div class="search-grid">
+
+                    <!-- Column 1: title + basic metadata, paired up like the search date row -->
+                    <div class="search-col search-col-terms">
+                        <div class="field" data-field="title">
+                            <label for="title">Title</label>
+                            <input type="text" id="title" name="title" required />
+                            <div class="field-error"></div>
+                        </div>
+
+                        <div class="field-row">
+                            <div class="field" data-field="newsDate">
+                                <label for="newsDate">News date</label>
+                                <input type="date" id="newsDate" name="newsDate" />
+                                <div class="field-error"></div>
+                            </div>
+                            <div class="field" data-field="filePath">
+                                <label for="filePath">File path</label>
+                                <input type="text" id="filePath" name="filePath" required placeholder="/mnt/archive/2026/..." />
+                                <div class="field-error"></div>
+                            </div>
+                        </div>
+
+                        <div class="field-row">
+                            <div class="field" data-field="numberOfFiles">
+                                <label for="numberOfFiles">Number of files</label>
+                                <input type="number" id="numberOfFiles" name="numberOfFiles" min="1" max="5000" required />
+                                <div class="field-error"></div>
+                            </div>
+                            <div class="field" data-field="totalSize">
+                                <label for="totalSize">Total size</label>
+                                <div class="input-with-select">
+                                    <input type="number" id="totalSize" name="totalSize" min="0" step="0.01" required />
+                                    <select id="totalSizeUnit" name="totalSizeUnit">
+                                        <option value="GB" selected>GB</option>
+                                        <option value="MB">MB</option>
+                                    </select>
+                                </div>
+                                <div class="field-error"></div>
+                            </div>
+                        </div>
+
+                        <div class="field-row">
+                            <div class="field" data-field="importerId">
+                                <label for="importerId">Imported by</label>
+                                <select id="importerId" name="importerId" required>
+                                    <option value="">Select staff member...</option>
+                                </select>
+                                <div class="field-error"></div>
+                            </div>
+                            <div class="field" data-field="ingestorId">
+                                <label for="ingestorId">Ingested by</label>
+                                <select id="ingestorId" name="ingestorId">
+                                    <option value="">Select staff member...</option>
+                                </select>
+                                <div class="field-error"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Column 2: active-only + reporters + cameramen -->
+                    <div class="search-col">
+                        <div class="field">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="createActiveOnly" checked />
+                                Active only
+                            </label>
+                            <div class="hint">Off shows only inactive reporters/cameramen — useful for backfilling older news.</div>
+                        </div>
+
+                        <div class="field" data-field="reporterIds">
+                            <label for="reporterIds">Reporters</label>
+                            <div id="reporterChips" class="chip-row"></div>
+                            <select id="reporterIds" name="reporterIds" multiple></select>
+                            <div class="hint">Hold Ctrl (Cmd on Mac) to select multiple.</div>
+                            <div class="field-error"></div>
+                        </div>
+
+                        <div class="field" data-field="cameramanIds">
+                            <label for="cameramanIds">Cameramen</label>
+                            <div id="cameramanChips" class="chip-row"></div>
+                            <select id="cameramanIds" name="cameramanIds" multiple></select>
+                            <div class="field-error"></div>
+                        </div>
+                    </div>
+
+                    <!-- Column 3: locations, on its own -->
+                    <div class="search-col">
+                        <div class="field">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="createAbroadOnly" />
+                                Is abroad
+                            </label>
+                            <div class="hint">Off shows local locations, on shows abroad.</div>
+                        </div>
+
+                        <div class="field" data-field="locationIds">
+                            <label for="locationIds">Locations</label>
+                            <div id="locationChips" class="chip-row"></div>
+                            <select id="locationIds" name="locationIds" multiple></select>
+                            <div class="field-error"></div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <button type="submit" id="create-news-submit" class="btn btn-primary">Add news item</button>
+                <button type="button" id="create-news-reset" class="btn btn-secondary">Clear form</button>
+            </form>
+        </div>
+
+        <!-- Search / list panel -->
+        <div id="search-news-panel" class="panel">
+            <h2>Search news</h2>
+
+            <form id="search-news-form" novalidate>
+                <div class="search-grid">
+
+                    <!-- Column 1: search-term builder + date range -->
+                    <div class="search-col search-col-terms">
+                        <div class="field">
+                            <label>Search terms</label>
+
+                            <div class="term-type-selector" id="termTypeSelector">
+                                <button type="button" class="term-type-btn active" data-type="and">Must include</button>
+                                <button type="button" class="term-type-btn" data-type="or">Any of these</button>
+                                <button type="button" class="term-type-btn" data-type="not">Exclude</button>
+                            </div>
+
+                            <div class="term-input-row">
+                                <input type="text" id="searchTermInput" placeholder="Type a word or phrase, then press Enter or Add" />
+                                <button type="button" id="addTermBtn" class="btn btn-secondary">Add</button>
+                            </div>
+                            <div class="hint">Pick a type above, type a word or phrase, then Add. Multi-word entries are matched as an exact phrase.</div>
+
+                            <div class="chip-group">
+                                <span class="chip-group-label">Must include</span>
+                                <div id="mustIncludeChips" class="chip-row"></div>
+                            </div>
+                            <div class="chip-group">
+                                <span class="chip-group-label">Any of these</span>
+                                <div id="anyOfChips" class="chip-row"></div>
+                            </div>
+                            <div class="chip-group">
+                                <span class="chip-group-label">Exclude</span>
+                                <div id="excludeChips" class="chip-row"></div>
+                            </div>
+                        </div>
+
+                        <div class="field-row">
+                            <div class="field">
+                                <label for="startDate">From date</label>
+                                <input type="date" id="startDate" name="startDate" />
+                                <div class="field-error"></div>
+                            </div>
+                            <div class="field">
+                                <label for="endDate">To date</label>
+                                <input type="date" id="endDate" name="endDate" />
+                                <div class="field-error"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Column 2: active-only + reporters + cameramen -->
+                    <div class="search-col">
+                        <div class="field">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="searchActiveOnly" checked />
+                                Active only
+                            </label>
+                            <div class="hint">Off shows only inactive reporters/cameramen — useful for older news.</div>
+                        </div>
+
+                        <div class="field">
+                            <label for="searchReporterIds">Reporters</label>
+                            <div id="searchReporterChips" class="chip-row"></div>
+                            <select id="searchReporterIds" name="reporterIds" multiple></select>
+                        </div>
+
+                        <div class="field">
+                            <label for="searchCameramanIds">Cameramen</label>
+                            <div id="searchCameramanChips" class="chip-row"></div>
+                            <select id="searchCameramanIds" name="cameramanIds" multiple></select>
+                        </div>
+                    </div>
+
+                    <!-- Column 3: locations, on its own -->
+                    <div class="search-col">
+                        <div class="field">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="searchAbroadOnly" />
+                                Is abroad
+                            </label>
+                            <div class="hint">Off shows local locations, on shows abroad.</div>
+                        </div>
+
+                        <div class="field">
+                            <label for="searchLocationIds">Locations</label>
+                            <div id="searchLocationChips" class="chip-row"></div>
+                            <select id="searchLocationIds" name="locationIds" multiple></select>
+                        </div>
+                    </div>
+
+                </div>
+
+                <button type="submit" id="search-submit" class="btn btn-primary">Search</button>
+                <button type="button" id="search-reset" class="btn btn-secondary">Clear filters</button>
+            </form>
+        </div>
+
+        <div id="search-results-overlay" class="modal-overlay hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Search results</h2>
+                    <button type="button" id="search-results-close" class="modal-close-btn" aria-label="Close">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div id="search-results-empty" class="empty-state">Run a search to see results.</div>
+                    <table id="search-results-table" class="hidden">
+                        <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Title</th>
+                            <th>Cameramen</th>
+                            <th>Reporters</th>
+                            <th>Locations</th>
+                            <th>Files</th>
+                            <th>Size (GB)</th>
+                        </tr>
+                        </thead>
+                        <tbody id="search-results-body"></tbody>
+                    </table>
+
+                    <div id="search-pagination" class="pagination hidden">
+                        <button type="button" id="page-prev" class="btn btn-secondary">Previous</button>
+                        <span id="page-status"></span>
+                        <button type="button" id="page-next" class="btn btn-secondary">Next</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/nav.js"></script>
+<script src="/js/news.js"></script>
+</body>
+</html>

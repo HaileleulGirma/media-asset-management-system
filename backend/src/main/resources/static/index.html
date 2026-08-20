@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sign in — MAM</title>
+    <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+<div class="login-page">
+    <div class="login-card">
+        <h1>Media Asset Management</h1>
+        <p class="subtitle">Sign in with your staff account</p>
+
+        <div id="login-alert" class="alert"></div>
+
+        <form id="login-form" novalidate>
+            <div class="field" data-field="username">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" autocomplete="username" required />
+                <div class="field-error"></div>
+            </div>
+
+            <div class="field" data-field="password">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" autocomplete="current-password" required />
+                <div class="field-error"></div>
+            </div>
+
+            <button type="submit" id="login-submit" class="btn btn-primary btn-block">Sign in</button>
+        </form>
+    </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/auth.js"></script>
+</body>
+</html>
