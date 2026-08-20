@@ -18,7 +18,7 @@ public class Location {
     private String locationName;
 
     @Column(name = "is_abroad")
-    private Boolean abroad;
+    private Boolean isAbroad;
 
     public Long getLocationId() {
         return locationId;
@@ -37,10 +37,10 @@ public class Location {
     }
 
     public Boolean getAbroad() {
-        return abroad;
+        return isAbroad;
     }
 
     public void setAbroad(Boolean abroad) {
-        this.abroad = abroad;
+        this.isAbroad = abroad;
     }
 }
