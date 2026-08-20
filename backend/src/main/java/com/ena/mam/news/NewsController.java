@@ -29,6 +29,12 @@ public class NewsController {
     }
 
     @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    @PutMapping("/api/news/{newsId}")
+    public CreateNewsResponse update(@PathVariable Long newsId, @Valid @RequestBody CreateNewsRequest request){
+        return newsService.update(newsId, request);
+    }
+
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
     @DeleteMapping("/api/news/{newsId}")
     public ResponseEntity<Void> delete(
             @PathVariable Long newsId
