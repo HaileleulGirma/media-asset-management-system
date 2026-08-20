@@ -18,6 +18,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -48,6 +49,7 @@ public class NewsService {
         this.locationRepository = locationRepository;
     }
 
+    @Transactional
     public CreateNewsResponse create(CreateNewsRequest request) {
 
         Set<Cameraman> cameramen =
@@ -61,28 +63,32 @@ public class NewsService {
 
         StaffMember importer =
                 staffMemberRepository.findById(request.importerId())
-                        .orElseThrow(() -> new RuntimeException("Importer not found"));
+                        .orElseThrow(() -> new ResourceNotFoundException("Importer not found: " + request.importerId()));
 
-        StaffMember ingestor =
-                staffMemberRepository.findById(request.ingestorId())
-                        .orElseThrow(() -> new RuntimeException("Ingestor not found"));
+        StaffMember ingestor = null;
+        if (request.ingestorId() != null) {
+            ingestor = staffMemberRepository.findById(request.ingestorId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Ingestor not found: " + request.ingestorId()));
+        }
 
-        News news = newsMapper.toNews(
-                request,
-                cameramen,
-                reporters,
-                importer,
-                ingestor,
-                locations
-        );
-
+        News news = newsMapper.toNews(request, cameramen, reporters, importer, ingestor, locations);
         News savedNews = newsRepository.save(news);
-
         return newsMapper.toResponse(savedNews);
     }
 
-    public CreateNewsResponse update(Long newsId, CreateNewsRequest request){
-        News news = newsRepository.findById(newsId).orElseThrow(() -> new ResourceNotFoundException("News with id %d not found.".formatted(newsId)));
+    @Transactional
+    public CreateNewsResponse update(Long newsId, CreateNewsRequest request) {
+        if (request.version() == null) {
+            throw new IllegalArgumentException("Version number is required when updating news.");
+        }
+
+        News news = newsRepository.findById(newsId)
+                .orElseThrow(() -> new ResourceNotFoundException("News with id %d not found.".formatted(newsId)));
+
+        // Explicitly verify the client is updating the latest version
+        if (!news.getVersion().equals(request.version())) {
+            throw new org.springframework.orm.ObjectOptimisticLockingFailureException(News.class, newsId);
+        }
 
         Set<Cameraman> cameramen =
                 new HashSet<>(cameramanRepository.findAllById(request.cameramanIds()));
@@ -90,11 +96,17 @@ public class NewsService {
         Set<Reporter> reporters =
                 new HashSet<>(reporterRepository.findAllById(request.reporterIds()));
 
-        StaffMember importer = staffMemberRepository.findById(request.importerId()).orElseThrow(() -> new ResourceNotFoundException("Staff member with id %d not found.".formatted(request.importerId())));
-        StaffMember ingestor = staffMemberRepository.findById(request.ingestorId()).orElseThrow(() -> new ResourceNotFoundException("Staff member with id %d not found.".formatted(request.ingestorId())));
-
         Set<Location> locations =
                 new HashSet<>(locationRepository.findAllById(request.locationIds()));
+
+        StaffMember importer = staffMemberRepository.findById(request.importerId())
+                .orElseThrow(() -> new ResourceNotFoundException("Importer with id %d not found.".formatted(request.importerId())));
+
+        StaffMember ingestor = null;
+        if (request.ingestorId() != null) {
+            ingestor = staffMemberRepository.findById(request.ingestorId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Ingestor with id %d not found.".formatted(request.ingestorId())));
+        }
 
         newsMapper.updateNews(
                 news,
@@ -107,7 +119,6 @@ public class NewsService {
         );
 
         News savedNews = newsRepository.save(news);
-
         return newsMapper.toResponse(savedNews);
     }
 
@@ -115,6 +126,7 @@ public class NewsService {
         newsRepository.deleteById(newsId);
     }
 
+    @Transactional(readOnly = true)
     public Page<CreateNewsResponse> search(NewsFilter filter, Pageable pageable) {
 
         Specification<News> spec = Specification.allOf();
