@@ -45,7 +45,7 @@ public class CameramanService {
     public List<CreateCameramanResponse> findAll(Boolean activeOnly){
         List<Cameraman> cameramen = (activeOnly != null && activeOnly)
                 ? cameramanRepository.findByIsActiveTrue()
-                : cameramanRepository.findAll();
+                : cameramanRepository.findByIsActiveFalse();
 
         return cameramen.stream()
                 .map(cameramanMapper::toResponse)
