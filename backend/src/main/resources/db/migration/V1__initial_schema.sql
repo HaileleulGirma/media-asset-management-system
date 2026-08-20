@@ -48,13 +48,14 @@ CREATE TABLE app_role (
 CREATE TABLE news (
                       news_id BIGINT GENERATED ALWAYS AS IDENTITY,
                       title TEXT NOT NULL,
-                      number_of_files INTEGER NOT NULL,
-                      total_size FLOAT(53) NOT NULL,
+                      number_of_files INTEGER,
+                      total_size FLOAT(53),
                       news_date DATE NOT NULL,
                       file_path VARCHAR(255) NOT NULL,
 
                       imported_by BIGINT NOT NULL,
-                      ingested_by BIGINT NOT NULL,
+                      ingested_by BIGINT,
+                      version BIGINT NOT NULL DEFAULT 0,
 
                       PRIMARY KEY (news_id),
 
@@ -82,7 +83,7 @@ CREATE TABLE app_user (
 );
 
 -- =====================================================
--- MANY-TO-MANY TABLES
+-- MANY-TO-MANY TABLES (NO VERSION NEEDED)
 -- =====================================================
 
 CREATE TABLE news_cameraman (
@@ -133,34 +134,18 @@ CREATE TABLE news_location (
                                        REFERENCES location(location_id)
 );
 
-
 -- =====================================================
 -- INDEXES
 -- =====================================================
 
-CREATE INDEX idx_news_reporter_reporter
-    ON news_reporter(reporter_id);
-
-CREATE INDEX idx_news_cameraman_cameraman
-    ON news_cameraman(cameraman_id);
-
-CREATE INDEX idx_news_location_location
-    ON news_location(location_id);
-
-CREATE INDEX idx_news_date_desc
-    ON news(news_date DESC);
-
-CREATE INDEX idx_news_imported_by
-    ON news(imported_by);
-
-CREATE INDEX idx_news_ingested_by
-    ON news(ingested_by);
-
-CREATE INDEX idx_app_user_role_id
-    ON app_user(role_id);
+CREATE INDEX idx_news_reporter_reporter ON news_reporter(reporter_id);
+CREATE INDEX idx_news_cameraman_cameraman ON news_cameraman(cameraman_id);
+CREATE INDEX idx_news_location_location ON news_location(location_id);
+CREATE INDEX idx_news_date_desc ON news(news_date DESC);
+CREATE INDEX idx_news_imported_by ON news(imported_by);
+CREATE INDEX idx_news_ingested_by ON news(ingested_by);
+CREATE INDEX idx_app_user_role_id ON app_user(role_id);
 
 CREATE INDEX news_title_fts_idx
     ON news
-        USING gin (
-                   to_tsvector('simple', title)
-            );
+        USING gin (to_tsvector('simple', title));
