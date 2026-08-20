@@ -1,7 +1,7 @@
 package com.ena.mam.dto.response;
 
 public record CreateReporterResponse(
-        Long id,
+        Long reporterId,
         String reporterName,
         Boolean isActive
         ) {
