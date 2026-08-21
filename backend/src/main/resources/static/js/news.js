@@ -1,24 +1,34 @@
 (function () {
-    const NEWS_CREATE_ENDPOINT = "/api/news";
+    const NEWS_ENDPOINT = "/api/news";
     const MB_PER_GB = 1024;
     const PAGE_SIZE = 20;
 
     const isAdminOrStaff = Auth.hasRole("ADMIN") || Auth.hasRole("STAFF");
     const createPanel = document.getElementById("create-news-panel");
     const searchPanel = document.getElementById("search-news-panel");
+    const modifyPanel = document.getElementById("modify-news-panel");
+
     const resultsOverlay = document.getElementById("search-results-overlay");
     const resultsCloseBtn = document.getElementById("search-results-close");
+
     const tabSearchBtn = document.getElementById("tab-search-btn");
     const tabAddBtn = document.getElementById("tab-add-btn");
+    const tabModifyBtn = document.getElementById("tab-modify-btn");
 
-    const nameMaps = { reporters: {}, cameramen: {}, locations: {} };
+    const nameMaps = { reporters: {}, cameramen: {}, locations: {}, staff: {} };
 
     function showTab(tab) {
         const showAdd = tab === "add" && isAdminOrStaff;
+        const showModify = tab === "modify" && isAdminOrStaff;
+        const showSearch = tab === "search" || (!showAdd && !showModify);
+
         createPanel.classList.toggle("hidden", !showAdd);
-        searchPanel.classList.toggle("hidden", showAdd);
-        tabSearchBtn.classList.toggle("active", !showAdd);
+        modifyPanel.classList.toggle("hidden", !showModify);
+        searchPanel.classList.toggle("hidden", !showSearch);
+
+        tabSearchBtn.classList.toggle("active", showSearch);
         tabAddBtn.classList.toggle("active", showAdd);
+        tabModifyBtn.classList.toggle("active", showModify);
     }
 
     tabSearchBtn.addEventListener("click", () => showTab("search"));
@@ -26,6 +36,9 @@
     if (isAdminOrStaff) {
         tabAddBtn.classList.remove("hidden");
         tabAddBtn.addEventListener("click", () => showTab("add"));
+
+        tabModifyBtn.classList.remove("hidden");
+        tabModifyBtn.addEventListener("click", () => showTab("modify"));
     }
 
     showTab("search");
@@ -44,9 +57,6 @@
                     apiFetch("/api/location?abroadOnly=true"),
                 ]);
 
-            // Search results can reference people regardless of their current
-            // active status, so the name lookup needs both lists merged --
-            // activeOnly is a strict either/or filter now, not "everyone".
             [...activeReporters, ...inactiveReporters].forEach((r) => (nameMaps.reporters[r.reporterId] = r.reporterName));
             [...activeCameramen, ...inactiveCameramen].forEach((c) => (nameMaps.cameramen[c.cameramanId] = c.cameramanName));
             [...localLocations, ...abroadLocations].forEach((l) => (nameMaps.locations[l.locationId] = l.locationName));
@@ -56,35 +66,31 @@
 
             if (isAdminOrStaff) {
                 createLocationController.fillSelect(localLocations, "locationId", "locationName");
+                editLocationController.fillSelect(localLocations, "locationId", "locationName");
+
                 await loadCreatePeopleOptions(document.getElementById("createActiveOnly").checked);
+                await loadEditPeopleOptions(document.getElementById("editActiveOnly").checked);
             }
         } catch (err) {
             showAlert(searchAlertEl(), "Could not load filter data: " + (err.body?.message || err.message), "error");
         }
     }
 
-    document.getElementById("searchActiveOnly").addEventListener("change", (e) => {
-        loadSearchPeopleOptions(e.target.checked);
-    });
+    document.getElementById("searchActiveOnly").addEventListener("change", (e) => loadSearchPeopleOptions(e.target.checked));
+    if (isAdminOrStaff) {
+        document.getElementById("createActiveOnly").addEventListener("change", (e) => loadCreatePeopleOptions(e.target.checked));
+        document.getElementById("editActiveOnly").addEventListener("change", (e) => loadEditPeopleOptions(e.target.checked));
+    }
 
-    document.getElementById("createActiveOnly").addEventListener("change", (e) => {
-        loadCreatePeopleOptions(e.target.checked);
-    });
-
-    // A handful of selects (locations under the abroad toggle, reporters and
-    // cameramen under the active-only toggle) need the same behavior: the
-    // visible option list always matches the current filter exactly, but a
-    // pick made under one filter state stays selected -- and keeps sending
-    // with the request -- after switching to the other, until the user
-    // removes its chip themselves. This factory binds that behavior to one
-    // <select> + chip container; idField/labelField are supplied per
-    // fillSelect call so the same factory serves every field.
     function makeMultiSelectController(selectId, chipsId) {
-        const selected = new Map(); // id (string) -> label
+        const selected = new Map();
 
         function fillSelect(items, idField, labelField) {
             const select = document.getElementById(selectId);
+            const placeholder = select.querySelector("option[disabled]");
             select.innerHTML = "";
+            if (placeholder) select.appendChild(placeholder);
+
             items.forEach((item) => {
                 const opt = document.createElement("option");
                 opt.value = item[idField];
@@ -94,6 +100,9 @@
                 }
                 select.appendChild(opt);
             });
+            if (placeholder && !Array.from(select.options).some((o) => o.selected && o !== placeholder)) {
+                placeholder.selected = true;
+            }
         }
 
         function renderChipsFn() {
@@ -114,6 +123,11 @@
                     const select = document.getElementById(selectId);
                     const opt = Array.from(select.options).find((o) => o.value === id);
                     if (opt) opt.selected = false;
+
+                    const placeholder = select.querySelector("option[disabled]");
+                    if (placeholder && !Array.from(select.options).some((o) => o.selected && o !== placeholder)) {
+                        placeholder.selected = true;
+                    }
                     renderChipsFn();
                 });
 
@@ -124,9 +138,8 @@
 
         document.getElementById(selectId).addEventListener("change", () => {
             const select = document.getElementById(selectId);
-            // Only options actually visible right now can have been toggled
-            // by the user -- anything hidden by the current filter is untouched.
             Array.from(select.options).forEach((opt) => {
+                if (opt.disabled) return;
                 if (opt.selected) {
                     selected.set(opt.value, opt.textContent);
                 } else {
@@ -146,15 +159,36 @@
             ids() {
                 return Array.from(selected.keys()).map(Number);
             },
+            setIds(idsArray, mapObj) {
+                selected.clear();
+                (idsArray || []).forEach((id) => {
+                    if (mapObj[id]) {
+                        selected.set(String(id), mapObj[id]);
+                    }
+                });
+                const select = document.getElementById(selectId);
+                Array.from(select.options).forEach((opt) => {
+                    if (!opt.disabled) {
+                        opt.selected = selected.has(opt.value);
+                    }
+                });
+                renderChipsFn();
+            },
         };
     }
 
     const searchLocationController = makeMultiSelectController("searchLocationIds", "searchLocationChips");
     const createLocationController = makeMultiSelectController("locationIds", "locationChips");
+    const editLocationController = makeMultiSelectController("editLocationIds", "editLocationChips");
+
     const searchReporterController = makeMultiSelectController("searchReporterIds", "searchReporterChips");
     const searchCameramanController = makeMultiSelectController("searchCameramanIds", "searchCameramanChips");
+
     const createReporterController = makeMultiSelectController("reporterIds", "reporterChips");
     const createCameramanController = makeMultiSelectController("cameramanIds", "cameramanChips");
+
+    const editReporterController = makeMultiSelectController("editReporterIds", "editReporterChips");
+    const editCameramanController = makeMultiSelectController("editCameramanIds", "editCameramanChips");
 
     document.getElementById("searchAbroadOnly").addEventListener("change", async (e) => {
         try {
@@ -165,20 +199,26 @@
         }
     });
 
-    document.getElementById("createAbroadOnly").addEventListener("change", async (e) => {
-        try {
-            const locations = await apiFetch(`/api/location?abroadOnly=${e.target.checked}`);
-            createLocationController.fillSelect(locations, "locationId", "locationName");
-        } catch (err) {
-            showAlert(createAlertEl(), "Could not load locations: " + (err.body?.message || err.message), "error");
-        }
-    });
+    if (isAdminOrStaff) {
+        document.getElementById("createAbroadOnly").addEventListener("change", async (e) => {
+            try {
+                const locations = await apiFetch(`/api/location?abroadOnly=${e.target.checked}`);
+                createLocationController.fillSelect(locations, "locationId", "locationName");
+            } catch (err) {
+                showAlert(createAlertEl(), "Could not load locations: " + (err.body?.message || err.message), "error");
+            }
+        });
 
-    // Shared loader for a reporters+cameramen pair, driven by an
-    // "active only" toggle. Used by both the search and create panels.
-    // Selection persists across the toggle via the controllers' own Map,
-    // so switching never mixes active and inactive in the visible list but
-    // also never silently drops a pick made under the other state.
+        document.getElementById("editAbroadOnly").addEventListener("change", async (e) => {
+            try {
+                const locations = await apiFetch(`/api/location?abroadOnly=${e.target.checked}`);
+                editLocationController.fillSelect(locations, "locationId", "locationName");
+            } catch (err) {
+                showAlert(document.getElementById("edit-news-alert"), "Could not load locations: " + (err.body?.message || err.message), "error");
+            }
+        });
+    }
+
     async function loadPeopleOptions(activeOnly, reporterController, cameramanController, alertEl) {
         try {
             const [reporters, cameramen] = await Promise.all([
@@ -198,20 +238,29 @@
     function loadSearchPeopleOptions(activeOnly) {
         return loadPeopleOptions(activeOnly, searchReporterController, searchCameramanController, searchAlertEl());
     }
-
     function loadCreatePeopleOptions(activeOnly) {
         return loadPeopleOptions(activeOnly, createReporterController, createCameramanController, createAlertEl());
+    }
+    function loadEditPeopleOptions(activeOnly) {
+        return loadPeopleOptions(activeOnly, editReporterController, editCameramanController, document.getElementById("edit-news-alert"));
     }
 
     if (isAdminOrStaff) {
         loadStaffData();
     }
 
+    // Fills the create/edit staff <select>s AND records id->name in
+    // nameMaps.staff so the modify table can show "Imported by" /
+    // "Ingested by" without extra requests.
     async function loadStaffData() {
         try {
             const staff = await apiFetch("/api/staffmember?activeOnly=true");
+            staff.forEach((s) => (nameMaps.staff[s.staffMemberId] = s.staffMemberName));
+
             fillSingleSelect("importerId", staff, "staffMemberId", "staffMemberName");
             fillSingleSelect("ingestorId", staff, "staffMemberId", "staffMemberName");
+            fillSingleSelect("editImporterId", staff, "staffMemberId", "staffMemberName");
+            fillSingleSelect("editIngestorId", staff, "staffMemberId", "staffMemberName");
         } catch (err) {
             showAlert(createAlertEl(), "Could not load staff data: " + (err.body?.message || err.message), "error");
         }
@@ -228,27 +277,11 @@
         });
     }
 
-    // ---------- Create news form ----------
-
-    const form = document.getElementById("create-news-form");
-    function createAlertEl() {
-        return document.getElementById("create-news-alert");
-    }
-    const submitBtn = document.getElementById("create-news-submit");
-
-    // Re-loads the reporter/cameraman/location lists to match whatever the
-    // create form's active-only / abroad toggles are currently set to.
-    // Needed after form.reset() (submit success, or Clear form), since
-    // resetting the checkboxes back to their defaults doesn't itself
-    // re-fetch the lists.
-    function refreshCreateLists() {
-        loadCreatePeopleOptions(document.getElementById("createActiveOnly").checked);
-        apiFetch(`/api/location?abroadOnly=${document.getElementById("createAbroadOnly").checked}`)
-            .then((locations) => createLocationController.fillSelect(locations, "locationId", "locationName"))
-            .catch((err) => showAlert(createAlertEl(), "Could not load locations: " + (err.body?.message || err.message), "error"));
+    function numberOrNull(value) {
+        return value === "" ? null : Number(value);
     }
 
-    function clearCreateFieldErrors() {
+    function clearFieldErrors(form) {
         form.querySelectorAll(".field").forEach((f) => {
             f.classList.remove("has-error");
             const errEl = f.querySelector(".field-error");
@@ -256,75 +289,265 @@
         });
     }
 
-    const clearFormBtn = document.getElementById("create-news-reset");
-    clearFormBtn.addEventListener("click", () => {
-        form.reset();
-        hideAlert(createAlertEl());
-        clearCreateFieldErrors();
-        createReporterController.clear();
-        createCameramanController.clear();
-        createLocationController.clear();
-        refreshCreateLists();
-    });
+    // ---------- Create news form ----------
 
-    form.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const alertEl = createAlertEl();
-        hideAlert(alertEl);
-        clearCreateFieldErrors();
-        submitBtn.disabled = true;
-        submitBtn.textContent = "Saving...";
+    const form = document.getElementById("create-news-form");
+    function createAlertEl() { return document.getElementById("create-news-alert"); }
+    const submitBtn = document.getElementById("create-news-submit");
 
-        const payload = {
-            title: document.getElementById("title").value.trim(),
-            newsDate: document.getElementById("newsDate").value || null,
-            filePath: document.getElementById("filePath").value.trim(),
-            numberOfFiles: numberOrNull(document.getElementById("numberOfFiles").value),
-            totalSize: totalSizeInGb(),
-            importerId: numberOrNull(document.getElementById("importerId").value),
-            ingestorId: numberOrNull(document.getElementById("ingestorId").value),
-            reporterIds: createReporterController.ids(),
-            cameramanIds: createCameramanController.ids(),
-            locationIds: createLocationController.ids(),
-        };
+    function refreshCreateLists() {
+        loadCreatePeopleOptions(document.getElementById("createActiveOnly").checked);
+        apiFetch(`/api/location?abroadOnly=${document.getElementById("createAbroadOnly").checked}`)
+            .then((locations) => createLocationController.fillSelect(locations, "locationId", "locationName"))
+            .catch((err) => showAlert(createAlertEl(), "Could not load locations: " + (err.body?.message || err.message), "error"));
+    }
 
-        try {
-            await apiFetch(NEWS_CREATE_ENDPOINT, { method: "POST", body: payload });
+    if (form) {
+        const clearFormBtn = document.getElementById("create-news-reset");
+        clearFormBtn.addEventListener("click", () => {
             form.reset();
-            clearCreateFieldErrors();
+            hideAlert(createAlertEl());
+            clearFieldErrors(form);
             createReporterController.clear();
             createCameramanController.clear();
             createLocationController.clear();
             refreshCreateLists();
-            showAlert(alertEl, "News item added.", "success");
-            alertEl.scrollIntoView({ behavior: "smooth", block: "center" });
-        } catch (err) {
-            showFormErrors(form, err, alertEl);
-            alertEl.scrollIntoView({ behavior: "smooth", block: "center" });
-        } finally {
-            submitBtn.disabled = false;
-            submitBtn.textContent = "Add news item";
-        }
-    });
+        });
 
-    function numberOrNull(value) {
-        return value === "" ? null : Number(value);
+        form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const alertEl = createAlertEl();
+            hideAlert(alertEl);
+            clearFieldErrors(form);
+            submitBtn.disabled = true;
+            submitBtn.textContent = "Saving...";
+
+            const rawSize = document.getElementById("totalSize").value;
+            const sizeUnit = document.getElementById("totalSizeUnit").value;
+            let finalSize = rawSize === "" ? null : (sizeUnit === "MB" ? Number(rawSize) / MB_PER_GB : Number(rawSize));
+
+            const payload = {
+                title: document.getElementById("title").value.trim(),
+                newsDate: document.getElementById("newsDate").value || null,
+                filePath: document.getElementById("filePath").value.trim(),
+                numberOfFiles: numberOrNull(document.getElementById("numberOfFiles").value),
+                totalSize: finalSize,
+                importerId: numberOrNull(document.getElementById("importerId").value),
+                ingestorId: numberOrNull(document.getElementById("ingestorId").value),
+                reporterIds: createReporterController.ids(),
+                cameramanIds: createCameramanController.ids(),
+                locationIds: createLocationController.ids(),
+            };
+
+            try {
+                await apiFetch(NEWS_ENDPOINT, { method: "POST", body: payload });
+                form.reset();
+                clearFieldErrors(form);
+                createReporterController.clear();
+                createCameramanController.clear();
+                createLocationController.clear();
+                refreshCreateLists();
+                showAlert(alertEl, "News item added.", "success");
+                alertEl.scrollIntoView({ behavior: "smooth", block: "center" });
+            } catch (err) {
+                showFormErrors(form, err, alertEl);
+                alertEl.scrollIntoView({ behavior: "smooth", block: "center" });
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = "Add news item";
+            }
+        });
     }
 
-    function totalSizeInGb() {
-        const rawValue = document.getElementById("totalSize").value;
-        if (rawValue === "") return null;
-        const unit = document.getElementById("totalSizeUnit").value;
-        const value = Number(rawValue);
-        return unit === "MB" ? value / MB_PER_GB : value;
+    // ---------- Modify / Delete News ----------
+    if (isAdminOrStaff) {
+        const modifySearchBtn = document.getElementById("modifySearchBtn");
+        const modifySearchDate = document.getElementById("modifySearchDate");
+        const modifyListAlert = document.getElementById("modify-list-alert");
+        const modifyResultsBody = document.getElementById("modify-results-body");
+        const modifyResultsTable = document.getElementById("modify-results-table");
+
+        const editOverlay = document.getElementById("edit-news-overlay");
+        const editForm = document.getElementById("edit-news-form");
+        const editCancelBtn = document.getElementById("edit-news-cancel");
+        const editCloseBtn = document.getElementById("edit-news-close");
+        const editSubmitBtn = document.getElementById("edit-news-submit");
+        let currentEditVersion = null;
+
+        modifySearchBtn.addEventListener("click", async () => {
+            const dateVal = modifySearchDate.value;
+            if (!dateVal) {
+                showAlert(modifyListAlert, "Please select a date to search.", "error");
+                return;
+            }
+            hideAlert(modifyListAlert);
+            modifySearchBtn.disabled = true;
+            modifySearchBtn.textContent = "Loading...";
+
+            try {
+                const result = await apiFetch(`${NEWS_ENDPOINT}?startDate=${dateVal}&size=100`);
+                renderModifyResults(result.content || []);
+            } catch (err) {
+                showAlert(modifyListAlert, "Could not load news: " + (err.body?.message || err.message), "error");
+            } finally {
+                modifySearchBtn.disabled = false;
+                modifySearchBtn.textContent = "Load news";
+            }
+        });
+
+        // Same columns/name-resolution as the search results table, plus
+        // Imported by / Ingested by so missing-ingestor items are easy to
+        // spot at a glance (a news item can exist without an ingestor,
+        // since ingestion always happens after import).
+        function renderModifyResults(items) {
+            modifyResultsBody.innerHTML = "";
+            if (items.length === 0) {
+                modifyResultsTable.classList.add("hidden");
+                showAlert(modifyListAlert, "No news found for this date.", "error");
+                return;
+            }
+            hideAlert(modifyListAlert);
+            modifyResultsTable.classList.remove("hidden");
+
+            items.forEach((item) => {
+                const importerName = item.importerId != null
+                    ? escapeHtml(nameMaps.staff[item.importerId] || "")
+                    : "\u2014";
+                const ingestorCell = item.ingestorId != null
+                    ? escapeHtml(nameMaps.staff[item.ingestorId] || "")
+                    : '<span class="badge-missing">Not ingested</span>';
+
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>${item.newsDate ?? ""}</td>
+                    <td>${escapeHtml(item.title ?? "")}</td>
+                    <td>${namesFor(item.cameramanIds, nameMaps.cameramen)}</td>
+                    <td>${namesFor(item.reporterIds, nameMaps.reporters)}</td>
+                    <td>${namesFor(item.locationIds, nameMaps.locations)}</td>
+                    <td>${item.numberOfFiles ?? ""}</td>
+                    <td>${item.totalSize != null ? item.totalSize.toFixed(2) : ""}</td>
+                    <td>${importerName}</td>
+                    <td>${ingestorCell}</td>
+                    <td>
+                        <div class="row-actions">
+                            <button type="button" class="btn btn-secondary btn-sm edit-btn">Edit</button>
+                            <button type="button" class="btn btn-danger btn-sm delete-btn">Delete</button>
+                        </div>
+                    </td>
+                `;
+
+                row.querySelector(".edit-btn").addEventListener("click", () => openEditModal(item));
+                row.querySelector(".delete-btn").addEventListener("click", () => deleteNewsItem(item.newsId));
+                modifyResultsBody.appendChild(row);
+            });
+        }
+
+        async function deleteNewsItem(id) {
+            if (!confirm("Are you sure you want to permanently delete this news item?")) return;
+            try {
+                await apiFetch(`${NEWS_ENDPOINT}/${id}`, { method: "DELETE" });
+                showAlert(modifyListAlert, "News item deleted successfully.", "success");
+                modifySearchBtn.click();
+            } catch (err) {
+                showAlert(modifyListAlert, "Failed to delete: " + (err.body?.message || err.message), "error");
+            }
+        }
+
+        function openEditModal(item) {
+            editOverlay.classList.remove("hidden");
+            hideAlert(document.getElementById("edit-news-alert"));
+            editForm.reset();
+            clearFieldErrors(editForm);
+
+            currentEditVersion = item.version ?? null;
+
+            document.getElementById("editNewsId").value = item.newsId;
+            document.getElementById("editTitle").value = item.title || "";
+            document.getElementById("editNewsDate").value = item.newsDate || "";
+            document.getElementById("editFilePath").value = item.filePath || "";
+            document.getElementById("editNumberOfFiles").value = item.numberOfFiles || "";
+
+            if (item.totalSize != null) {
+                document.getElementById("editTotalSize").value = item.totalSize;
+                document.getElementById("editTotalSizeUnit").value = "GB";
+            } else {
+                document.getElementById("editTotalSize").value = "";
+            }
+
+            document.getElementById("editImporterId").value = item.importerId || "";
+            document.getElementById("editIngestorId").value = item.ingestorId || "";
+
+            editLocationController.setIds(item.locationIds || [], nameMaps.locations);
+            editReporterController.setIds(item.reporterIds || [], nameMaps.reporters);
+            editCameramanController.setIds(item.cameramanIds || [], nameMaps.cameramen);
+        }
+
+        function closeEditModal() {
+            editOverlay.classList.add("hidden");
+        }
+
+        editCancelBtn.addEventListener("click", closeEditModal);
+        editCloseBtn.addEventListener("click", closeEditModal);
+        editOverlay.addEventListener("click", (e) => {
+            if (e.target === editOverlay) closeEditModal();
+        });
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "Escape") {
+                if (!editOverlay.classList.contains("hidden")) closeEditModal();
+                else if (!resultsOverlay.classList.contains("hidden")) closeResultsModal();
+            }
+        });
+
+        editForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const alertEl = document.getElementById("edit-news-alert");
+            hideAlert(alertEl);
+            clearFieldErrors(editForm);
+            editSubmitBtn.disabled = true;
+            editSubmitBtn.textContent = "Saving...";
+
+            const id = document.getElementById("editNewsId").value;
+
+            const rawSize = document.getElementById("editTotalSize").value;
+            const sizeUnit = document.getElementById("editTotalSizeUnit").value;
+            let finalSize = rawSize === "" ? null : (sizeUnit === "MB" ? Number(rawSize) / MB_PER_GB : Number(rawSize));
+
+            const payload = {
+                title: document.getElementById("editTitle").value.trim(),
+                newsDate: document.getElementById("editNewsDate").value || null,
+                filePath: document.getElementById("editFilePath").value.trim(),
+                numberOfFiles: numberOrNull(document.getElementById("editNumberOfFiles").value),
+                totalSize: finalSize,
+                importerId: numberOrNull(document.getElementById("editImporterId").value),
+                ingestorId: numberOrNull(document.getElementById("editIngestorId").value),
+                reporterIds: editReporterController.ids(),
+                cameramanIds: editCameramanController.ids(),
+                locationIds: editLocationController.ids(),
+                version: currentEditVersion,
+            };
+
+            try {
+                await apiFetch(`${NEWS_ENDPOINT}/${id}`, { method: "PUT", body: payload });
+                closeEditModal();
+                showAlert(modifyListAlert, "News item updated successfully.", "success");
+                modifySearchBtn.click();
+            } catch (err) {
+                if (err.status === 409) {
+                    showAlert(alertEl, "This news item was changed by someone else. Close this dialog and reload the list to try again.", "error");
+                } else {
+                    showFormErrors(editForm, err, alertEl);
+                }
+            } finally {
+                editSubmitBtn.disabled = false;
+                editSubmitBtn.textContent = "Save changes";
+            }
+        });
     }
 
     // ---------- Search news ----------
 
     const searchForm = document.getElementById("search-news-form");
-    function searchAlertEl() {
-        return document.getElementById("search-results-empty");
-    }
+    function searchAlertEl() { return document.getElementById("search-results-empty"); }
     const resetBtn = document.getElementById("search-reset");
     const resultsEmpty = document.getElementById("search-results-empty");
     const resultsTable = document.getElementById("search-results-table");
@@ -337,9 +560,6 @@
     let currentPage = 0;
     let totalPages = 0;
 
-    // Shows (or clears, when message is falsy) a "From date"/"To date"
-    // range error inline under both date fields, using the same
-    // .has-error / .field-error convention as the rest of the form.
     function setDateRangeError(message) {
         ["startDate", "endDate"].forEach((id) => {
             const field = document.getElementById(id).closest(".field");
@@ -381,12 +601,6 @@
 
     resultsOverlay.addEventListener("click", (e) => {
         if (e.target === resultsOverlay) closeResultsModal();
-    });
-
-    document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape" && !resultsOverlay.classList.contains("hidden")) {
-            closeResultsModal();
-        }
     });
 
     function openResultsModal() {
@@ -525,7 +739,7 @@
         params.append("size", PAGE_SIZE);
 
         try {
-            const result = await apiFetch("/api/news?" + params.toString());
+            const result = await apiFetch(NEWS_ENDPOINT + "?" + params.toString());
             renderResults(result);
         } catch (err) {
             resultsEmpty.textContent = "Could not load results: " + (err.body?.message || err.message);

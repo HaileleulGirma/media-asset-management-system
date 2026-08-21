@@ -284,6 +284,16 @@ button, .btn {
     margin: 0 0 16px;
 }
 
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 16px;
+}
+
+.form-grid .field-full {
+    grid-column: 1 / -1;
+}
+
 .chip-row {
     display: flex;
     flex-wrap: wrap;
@@ -594,4 +604,67 @@ tr:hover td {
 
 .hidden {
     display: none !important;
+}
+
+/* ---------- Modify/Delete search row ---------- */
+
+.modify-search-row {
+    display: flex;
+    gap: 12px;
+    align-items: flex-end;
+    max-width: 320px;
+    margin-bottom: 16px;
+}
+
+.modify-search-row .field {
+    flex: 1;
+    margin-bottom: 0;
+}
+
+/* ---------- Small action buttons (table row actions) ---------- */
+
+.btn-sm {
+    padding: 5px 10px;
+    font-size: 12px;
+}
+
+.btn-danger {
+    background: var(--color-danger-bg);
+    color: var(--color-danger);
+    border-color: var(--color-danger-bg);
+}
+
+.btn-danger:hover {
+    background: var(--color-danger);
+    color: #fff;
+}
+
+/* ---------- Row action buttons (modify table): edit + delete sit
+   side by side with a gap instead of stacking on top of each other ---------- */
+
+.row-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* ---------- Missing-ingestor badge (modify table) ---------- */
+
+.badge-missing {
+    display: inline-block;
+    background: var(--color-danger-bg);
+    color: var(--color-danger);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 999px;
+}
+
+/* ---------- Modal action row (edit modal footer) ---------- */
+
+.modal-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 8px;
 }

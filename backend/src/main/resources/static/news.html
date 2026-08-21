@@ -15,6 +15,7 @@
         <div class="tab-bar" id="tab-bar">
             <button type="button" id="tab-search-btn" class="tab-btn">Search</button>
             <button type="button" id="tab-add-btn" class="tab-btn hidden">Add news item</button>
+            <button type="button" id="tab-modify-btn" class="tab-btn hidden">Modify News</button>
         </div>
 
         <!-- Create News panel: entire tab hidden for Viewer role via news.js -->
@@ -234,6 +235,40 @@
             </form>
         </div>
 
+        <!-- Modify / Delete panel -->
+        <div id="modify-news-panel" class="panel hidden">
+            <h2>Modify / delete news</h2>
+            <p class="hint">Select a date to view and manage news items created on that day.</p>
+
+            <div class="modify-search-row">
+                <div class="field">
+                    <label for="modifySearchDate">News date</label>
+                    <input type="date" id="modifySearchDate" />
+                </div>
+                <button id="modifySearchBtn" type="button" class="btn btn-primary">Load news</button>
+            </div>
+
+            <div id="modify-list-alert" class="alert"></div>
+
+            <table id="modify-results-table" class="hidden">
+                <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Title</th>
+                    <th>Cameramen</th>
+                    <th>Reporters</th>
+                    <th>Locations</th>
+                    <th>Files</th>
+                    <th>Size (GB)</th>
+                    <th>Imported by</th>
+                    <th>Ingested by</th>
+                    <th>Actions</th>
+                </tr>
+                </thead>
+                <tbody id="modify-results-body"></tbody>
+            </table>
+        </div>
+
         <div id="search-results-overlay" class="modal-overlay hidden">
             <div class="modal-content">
                 <div class="modal-header">
@@ -262,6 +297,128 @@
                         <span id="page-status"></span>
                         <button type="button" id="page-next" class="btn btn-secondary">Next</button>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Edit news modal: same header/body/close pattern as the search results modal -->
+        <div id="edit-news-overlay" class="modal-overlay hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Edit news item</h2>
+                    <button type="button" id="edit-news-close" class="modal-close-btn" aria-label="Close">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div id="edit-news-alert" class="alert"></div>
+
+                    <form id="edit-news-form" novalidate>
+                        <input type="hidden" id="editNewsId" />
+
+                        <div class="field" data-field="title">
+                            <label for="editTitle">Title</label>
+                            <input type="text" id="editTitle" required />
+                            <div class="field-error"></div>
+                        </div>
+
+                        <div class="field-row">
+                            <div class="field" data-field="newsDate">
+                                <label for="editNewsDate">News date</label>
+                                <input type="date" id="editNewsDate" />
+                                <div class="field-error"></div>
+                            </div>
+                            <div class="field" data-field="filePath">
+                                <label for="editFilePath">File path</label>
+                                <input type="text" id="editFilePath" />
+                                <div class="field-error"></div>
+                            </div>
+                        </div>
+
+                        <div class="field-row">
+                            <div class="field" data-field="numberOfFiles">
+                                <label for="editNumberOfFiles">Number of files</label>
+                                <input type="number" id="editNumberOfFiles" min="1" max="10000" />
+                                <div class="field-error"></div>
+                            </div>
+                            <div class="field" data-field="totalSize">
+                                <label for="editTotalSize">Total size</label>
+                                <div class="input-with-select">
+                                    <input type="number" id="editTotalSize" min="0" step="0.01" />
+                                    <select id="editTotalSizeUnit">
+                                        <option value="GB" selected>GB</option>
+                                        <option value="MB">MB</option>
+                                    </select>
+                                </div>
+                                <div class="field-error"></div>
+                            </div>
+                        </div>
+
+                        <div class="field-row">
+                            <div class="field" data-field="importerId">
+                                <label for="editImporterId">Imported by</label>
+                                <select id="editImporterId">
+                                    <option value="">Select staff member...</option>
+                                </select>
+                                <div class="field-error"></div>
+                            </div>
+                            <div class="field" data-field="ingestorId">
+                                <label for="editIngestorId">Ingested by</label>
+                                <select id="editIngestorId">
+                                    <option value="">Select staff member...</option>
+                                </select>
+                                <div class="field-error"></div>
+                            </div>
+                        </div>
+
+                        <div class="field-row">
+                            <div class="field">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="editActiveOnly" checked />
+                                    Active reporters/cameramen only
+                                </label>
+                            </div>
+                            <div class="field">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="editAbroadOnly" />
+                                    Is abroad
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="field" data-field="reporterIds">
+                            <label for="editReporterIds">Reporters</label>
+                            <div id="editReporterChips" class="chip-row"></div>
+                            <select id="editReporterIds" multiple>
+                                <option value="" disabled selected>Add reporter...</option>
+                            </select>
+                            <div class="hint">Hold Ctrl (Cmd on Mac) to select multiple.</div>
+                            <div class="field-error"></div>
+                        </div>
+
+                        <div class="field" data-field="cameramanIds">
+                            <label for="editCameramanIds">Cameramen</label>
+                            <div id="editCameramanChips" class="chip-row"></div>
+                            <select id="editCameramanIds" multiple>
+                                <option value="" disabled selected>Add cameraman...</option>
+                            </select>
+                            <div class="hint">Hold Ctrl (Cmd on Mac) to select multiple.</div>
+                            <div class="field-error"></div>
+                        </div>
+
+                        <div class="field" data-field="locationIds">
+                            <label for="editLocationIds">Locations</label>
+                            <div id="editLocationChips" class="chip-row"></div>
+                            <select id="editLocationIds" multiple>
+                                <option value="" disabled selected>Add location...</option>
+                            </select>
+                            <div class="hint">Hold Ctrl (Cmd on Mac) to select multiple.</div>
+                            <div class="field-error"></div>
+                        </div>
+
+                        <div class="modal-actions">
+                            <button type="submit" id="edit-news-submit" class="btn btn-primary">Save changes</button>
+                            <button type="button" id="edit-news-cancel" class="btn btn-secondary">Cancel</button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
