@@ -46,7 +46,7 @@ public class StaffMemberService {
     public List<CreateStaffMemberResponse> findAll(Boolean activeOnly){
         List<StaffMember> staffMembers = (activeOnly != null && activeOnly)
                 ? staffMemberRepository.findByIsActiveTrue()
-                : staffMemberRepository.findAll();
+                : staffMemberRepository.findByIsActiveFalse();
 
         return staffMembers.stream()
                 .map(staffMemberMapper::toResponse)
