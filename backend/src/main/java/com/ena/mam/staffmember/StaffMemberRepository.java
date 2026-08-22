@@ -6,4 +6,5 @@ import java.util.List;
 
 public interface StaffMemberRepository extends JpaRepository<StaffMember, Long> {
     List <StaffMember> findByIsActiveTrue();
+    List <StaffMember> findByIsActiveFalse();
 }
