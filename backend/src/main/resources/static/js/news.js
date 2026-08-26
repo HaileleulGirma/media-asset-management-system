@@ -19,6 +19,16 @@
 
     const nameMaps = { reporters: {}, cameramen: {}, locations: {}, staff: {} };
 
+    // Global GC/EC calendar toggle (top nav) + wraps every date field on
+    // this page with the Ethiopian picker. The native inputs stay the
+    // source of truth (always Gregorian "YYYY-MM-DD"), so every other
+    // `.value` read in this file below is unaffected.
+    DatePicker.mountToggle();
+    DatePicker.attachAll([
+        "newsDate", "startDate", "endDate", "modifySearchDate",
+        "editNewsDate", "summaryStartDate", "summaryEndDate"
+    ]);
+
     function showTab(tab) {
         const showAdd = tab === "add" && isAdminOrStaff;
         const showModify = tab === "modify" && isAdminOrStaff;
@@ -314,6 +324,7 @@
         const clearFormBtn = document.getElementById("create-news-reset");
         clearFormBtn.addEventListener("click", () => {
             form.reset();
+            DatePicker.refresh("newsDate");
             hideAlert(createAlertEl());
             clearFieldErrors(form);
             createReporterController.clear();
@@ -350,6 +361,7 @@
             try {
                 await apiFetch(NEWS_ENDPOINT, { method: "POST", body: payload });
                 form.reset();
+                DatePicker.refresh("newsDate");
                 clearFieldErrors(form);
                 createReporterController.clear();
                 createCameramanController.clear();
@@ -472,6 +484,7 @@
             document.getElementById("editNewsId").value = item.newsId;
             document.getElementById("editTitle").value = item.title || "";
             document.getElementById("editNewsDate").value = item.newsDate || "";
+            DatePicker.refresh("editNewsDate");
             document.getElementById("editFilePath").value = item.filePath || "";
             document.getElementById("editNumberOfFiles").value = item.numberOfFiles || "";
 
@@ -897,6 +910,8 @@
 
     resetBtn.addEventListener("click", () => {
         searchForm.reset();
+        DatePicker.refresh("startDate");
+        DatePicker.refresh("endDate");
         setDateRangeError(null);
         searchReporterController.clear();
         searchCameramanController.clear();
@@ -970,6 +985,15 @@
             currentTermType === "and" ? mustIncludeTerms :
                 currentTermType === "or" ? anyOfTerms :
                     excludeTerms;
+
+        // A term can only sit in one pile at a time. Adding it to a new pile
+        // pulls it out of whichever pile(s) it was already in, so e.g. moving
+        // a term from "Must include" to "Exclude" removes the old chip too.
+        [mustIncludeTerms, anyOfTerms, excludeTerms].forEach((pile) => {
+            if (pile === targetArray) return;
+            const idx = pile.indexOf(value);
+            if (idx !== -1) pile.splice(idx, 1);
+        });
 
         if (!targetArray.includes(value)) targetArray.push(value);
         searchTermInput.value = "";
