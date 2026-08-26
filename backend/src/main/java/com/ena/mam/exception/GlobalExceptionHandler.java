@@ -1,5 +1,7 @@
 package com.ena.mam.exception;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
@@ -15,6 +17,9 @@ import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, String>> handleValidationException(
             MethodArgumentNotValidException ex) {
@@ -60,6 +65,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGenericException(
             Exception ex) {
+        // This was previously swallowing every unanticipated exception with
+        // no server-side trace at all -- if the client saw "An unexpected
+        // error occurred." there was nothing to look at in the console to
+        // find out why. Logging here doesn't change what the client
+        // receives, it just makes the real cause visible on the server.
+        log.error("Unhandled exception", ex);
         ErrorResponse errorResponse = new ErrorResponse(
                 "An unexpected error occurred.",
                 LocalDateTime.now()
