@@ -7,6 +7,7 @@
     const createPanel = document.getElementById("create-news-panel");
     const searchPanel = document.getElementById("search-news-panel");
     const modifyPanel = document.getElementById("modify-news-panel");
+    const staffSummaryPanel = document.getElementById("staff-summary-panel");
 
     const resultsOverlay = document.getElementById("search-results-overlay");
     const resultsCloseBtn = document.getElementById("search-results-close");
@@ -14,21 +15,25 @@
     const tabSearchBtn = document.getElementById("tab-search-btn");
     const tabAddBtn = document.getElementById("tab-add-btn");
     const tabModifyBtn = document.getElementById("tab-modify-btn");
+    const tabStaffBtn = document.getElementById("tab-staff-btn");
 
     const nameMaps = { reporters: {}, cameramen: {}, locations: {}, staff: {} };
 
     function showTab(tab) {
         const showAdd = tab === "add" && isAdminOrStaff;
         const showModify = tab === "modify" && isAdminOrStaff;
-        const showSearch = tab === "search" || (!showAdd && !showModify);
+        const showStaff = tab === "staff" && isAdminOrStaff;
+        const showSearch = tab === "search" || (!showAdd && !showModify && !showStaff);
 
         createPanel.classList.toggle("hidden", !showAdd);
         modifyPanel.classList.toggle("hidden", !showModify);
+        staffSummaryPanel.classList.toggle("hidden", !showStaff);
         searchPanel.classList.toggle("hidden", !showSearch);
 
         tabSearchBtn.classList.toggle("active", showSearch);
         tabAddBtn.classList.toggle("active", showAdd);
         tabModifyBtn.classList.toggle("active", showModify);
+        tabStaffBtn.classList.toggle("active", showStaff);
     }
 
     tabSearchBtn.addEventListener("click", () => showTab("search"));
@@ -39,6 +44,9 @@
 
         tabModifyBtn.classList.remove("hidden");
         tabModifyBtn.addEventListener("click", () => showTab("modify"));
+
+        tabStaffBtn.classList.remove("hidden");
+        tabStaffBtn.addEventListener("click", () => showTab("staff"));
     }
 
     showTab("search");
@@ -544,6 +552,287 @@
         });
     }
 
+    // ---------- Staff summary ----------
+    if (isAdminOrStaff) {
+        const summaryActiveOnly = document.getElementById("summaryActiveOnly");
+        const summaryStaffSelect = document.getElementById("summaryStaffId");
+        const summaryLoadBtn = document.getElementById("summaryLoadBtn");
+
+        const summaryResultsOverlay = document.getElementById("summary-results-overlay");
+        const summaryResultsCloseBtn = document.getElementById("summary-results-close");
+        const summaryModalLoading = document.getElementById("summary-modal-loading");
+        const summaryModalEmpty = document.getElementById("summary-modal-empty");
+        const summaryModalContent = document.getElementById("summary-modal-content");
+
+        // Full lists for the current staff member/date range, fetched once.
+        // Totals are computed from these; the two tables below are just a
+        // client-side page into them, kept independent so paging one list
+        // never touches the other's page.
+        let importedItems = [];
+        let ingestedItems = [];
+        let importedPage = 0;
+        let ingestedPage = 0;
+
+        function summaryAlertEl() {
+            return document.getElementById("summary-alert");
+        }
+
+        // Populates the staff dropdown for the given active/inactive state.
+        // Staff, like reporters/cameramen, has no "everyone" endpoint --
+        // activeOnly=true returns active staff, activeOnly=false returns
+        // inactive staff -- so the checkbox drives a single re-fetch,
+        // same pattern as the reporter/cameraman active-only toggles.
+        async function loadSummaryStaffOptions(activeOnly) {
+            try {
+                const staff = await apiFetch(`/api/staffmember?activeOnly=${activeOnly}`);
+                const previousValue = summaryStaffSelect.value;
+                summaryStaffSelect.innerHTML = '<option value="">Select staff member...</option>';
+                staff.forEach((s) => {
+                    const opt = document.createElement("option");
+                    opt.value = s.staffMemberId;
+                    opt.textContent = s.staffMemberName;
+                    summaryStaffSelect.appendChild(opt);
+                });
+                if (staff.some((s) => String(s.staffMemberId) === previousValue)) {
+                    summaryStaffSelect.value = previousValue;
+                }
+            } catch (err) {
+                showAlert(summaryAlertEl(), "Could not load staff list: " + (err.body?.message || err.message), "error");
+            }
+        }
+
+        summaryActiveOnly.addEventListener("change", (e) => loadSummaryStaffOptions(e.target.checked));
+        loadSummaryStaffOptions(summaryActiveOnly.checked);
+
+        // Staff member and both dates are required -- a summary is always
+        // scoped to a date range, never "all time". Same has-error /
+        // field-error convention as the search tab's date range check.
+        function setSummaryFieldError(inputId, message) {
+            const field = document.getElementById(inputId).closest(".field");
+            if (!field) return;
+            field.classList.toggle("has-error", Boolean(message));
+            const errEl = field.querySelector(".field-error");
+            if (errEl) errEl.textContent = message || "";
+        }
+
+        function validateSummaryInputs(staffId, startDate, endDate) {
+            let valid = true;
+            setSummaryFieldError("summaryStaffId", null);
+            setSummaryFieldError("summaryStartDate", null);
+            setSummaryFieldError("summaryEndDate", null);
+
+            if (!staffId) {
+                setSummaryFieldError("summaryStaffId", "Please select a staff member.");
+                valid = false;
+            }
+            if (!startDate) {
+                setSummaryFieldError("summaryStartDate", "From date is required.");
+                valid = false;
+            }
+            if (!endDate) {
+                setSummaryFieldError("summaryEndDate", "To date is required.");
+                valid = false;
+            }
+            if (startDate && endDate && startDate > endDate) {
+                setSummaryFieldError("summaryStartDate", '"From date" cannot be later than "To date".');
+                setSummaryFieldError("summaryEndDate", '"From date" cannot be later than "To date".');
+                valid = false;
+            }
+            return valid;
+        }
+
+        summaryStaffSelect.addEventListener("change", () => setSummaryFieldError("summaryStaffId", null));
+        document.getElementById("summaryStartDate").addEventListener("input", () => setSummaryFieldError("summaryStartDate", null));
+        document.getElementById("summaryEndDate").addEventListener("input", () => setSummaryFieldError("summaryEndDate", null));
+
+        function openSummaryModal() {
+            summaryResultsOverlay.classList.remove("hidden");
+            summaryModalLoading.classList.remove("hidden");
+            summaryModalEmpty.classList.add("hidden");
+            summaryModalContent.classList.add("hidden");
+        }
+
+        function closeSummaryModal() {
+            summaryResultsOverlay.classList.add("hidden");
+        }
+
+        summaryResultsCloseBtn.addEventListener("click", closeSummaryModal);
+        summaryResultsOverlay.addEventListener("click", (e) => {
+            if (e.target === summaryResultsOverlay) closeSummaryModal();
+        });
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "Escape" && !summaryResultsOverlay.classList.contains("hidden")) {
+                closeSummaryModal();
+            }
+        });
+
+        // Pulls every page of news matching a single filter param (importerId
+        // or ingestorId) plus the mandatory date range, so the totals and the
+        // on-screen pagination both reflect ALL of that staff member's news
+        // in-range, not just whatever the backend's first page returned.
+        async function fetchAllNews(paramName, paramValue, startDate, endDate) {
+            const all = [];
+            let page = 0;
+            const size = 100;
+
+            while (true) {
+                const params = new URLSearchParams();
+                params.append(paramName, paramValue);
+                params.append("startDate", startDate);
+                params.append("endDate", endDate);
+                params.append("page", page);
+                params.append("size", size);
+
+                const result = await apiFetch(`${NEWS_ENDPOINT}?${params.toString()}`);
+                const content = result.content || [];
+                all.push(...content);
+
+                if (result.last || content.length === 0) break;
+                page += 1;
+            }
+
+            return all;
+        }
+
+        function summaryTotals(items) {
+            return items.reduce(
+                (acc, item) => {
+                    acc.count += 1;
+                    acc.files += item.numberOfFiles || 0;
+                    acc.size += item.totalSize || 0;
+                    return acc;
+                },
+                { count: 0, files: 0, size: 0 }
+            );
+        }
+
+        function totalPagesFor(items) {
+            return Math.max(1, Math.ceil(items.length / PAGE_SIZE));
+        }
+
+        function paginateItems(items, page) {
+            const start = page * PAGE_SIZE;
+            return items.slice(start, start + PAGE_SIZE);
+        }
+
+        // Same row shape as the search/modify results tables -- date,
+        // title, cameramen/reporters/locations resolved via nameMaps,
+        // files, size -- so a staff member's news reads consistently
+        // with the rest of the app.
+        function renderSummaryTable(bodyId, items) {
+            const body = document.getElementById(bodyId);
+            body.innerHTML = "";
+            items.forEach((item) => {
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>${item.newsDate ?? ""}</td>
+                    <td>${escapeHtml(item.title ?? "")}</td>
+                    <td>${namesFor(item.cameramanIds, nameMaps.cameramen)}</td>
+                    <td>${namesFor(item.reporterIds, nameMaps.reporters)}</td>
+                    <td>${namesFor(item.locationIds, nameMaps.locations)}</td>
+                    <td>${item.numberOfFiles ?? ""}</td>
+                    <td>${item.totalSize != null ? item.totalSize.toFixed(2) : ""}</td>
+                `;
+                body.appendChild(row);
+            });
+        }
+
+        function renderImportedPage() {
+            const total = totalPagesFor(importedItems);
+            if (importedPage >= total) importedPage = total - 1;
+            if (importedPage < 0) importedPage = 0;
+
+            renderSummaryTable("summary-imported-body", paginateItems(importedItems, importedPage));
+            document.getElementById("summary-imported-page-status").textContent = `Page ${importedPage + 1} of ${total}`;
+            document.getElementById("summary-imported-prev").disabled = importedPage === 0;
+            document.getElementById("summary-imported-next").disabled = importedPage >= total - 1;
+        }
+
+        function renderIngestedPage() {
+            const total = totalPagesFor(ingestedItems);
+            if (ingestedPage >= total) ingestedPage = total - 1;
+            if (ingestedPage < 0) ingestedPage = 0;
+
+            renderSummaryTable("summary-ingested-body", paginateItems(ingestedItems, ingestedPage));
+            document.getElementById("summary-ingested-page-status").textContent = `Page ${ingestedPage + 1} of ${total}`;
+            document.getElementById("summary-ingested-prev").disabled = ingestedPage === 0;
+            document.getElementById("summary-ingested-next").disabled = ingestedPage >= total - 1;
+        }
+
+        document.getElementById("summary-imported-prev").addEventListener("click", () => {
+            importedPage -= 1;
+            renderImportedPage();
+        });
+        document.getElementById("summary-imported-next").addEventListener("click", () => {
+            importedPage += 1;
+            renderImportedPage();
+        });
+        document.getElementById("summary-ingested-prev").addEventListener("click", () => {
+            ingestedPage -= 1;
+            renderIngestedPage();
+        });
+        document.getElementById("summary-ingested-next").addEventListener("click", () => {
+            ingestedPage += 1;
+            renderIngestedPage();
+        });
+
+        function renderSummary(imported, ingested) {
+            importedItems = imported;
+            ingestedItems = ingested;
+            importedPage = 0;
+            ingestedPage = 0;
+
+            const importedTotals = summaryTotals(imported);
+            const ingestedTotals = summaryTotals(ingested);
+
+            document.getElementById("summaryImportedCount").textContent = importedTotals.count;
+            document.getElementById("summaryImportedFiles").textContent = importedTotals.files;
+            document.getElementById("summaryImportedSize").textContent = importedTotals.size.toFixed(2);
+
+            document.getElementById("summaryIngestedCount").textContent = ingestedTotals.count;
+            document.getElementById("summaryIngestedFiles").textContent = ingestedTotals.files;
+            document.getElementById("summaryIngestedSize").textContent = ingestedTotals.size.toFixed(2);
+
+            renderImportedPage();
+            renderIngestedPage();
+
+            summaryModalLoading.classList.add("hidden");
+
+            const hasAny = imported.length > 0 || ingested.length > 0;
+            summaryModalContent.classList.toggle("hidden", !hasAny);
+            summaryModalEmpty.classList.toggle("hidden", hasAny);
+        }
+
+        summaryLoadBtn.addEventListener("click", async () => {
+            const staffId = summaryStaffSelect.value;
+            const startDate = document.getElementById("summaryStartDate").value;
+            const endDate = document.getElementById("summaryEndDate").value;
+
+            if (!validateSummaryInputs(staffId, startDate, endDate)) {
+                return;
+            }
+
+            hideAlert(summaryAlertEl());
+            summaryLoadBtn.disabled = true;
+            summaryLoadBtn.textContent = "Loading...";
+            openSummaryModal();
+
+            try {
+                const [imported, ingested] = await Promise.all([
+                    fetchAllNews("importerId", staffId, startDate, endDate),
+                    fetchAllNews("ingestorId", staffId, startDate, endDate),
+                ]);
+                renderSummary(imported, ingested);
+            } catch (err) {
+                closeSummaryModal();
+                showAlert(summaryAlertEl(), "Could not load summary: " + (err.body?.message || err.message), "error");
+            } finally {
+                summaryLoadBtn.disabled = false;
+                summaryLoadBtn.textContent = "Load summary";
+            }
+        });
+    }
+
     // ---------- Search news ----------
 
     const searchForm = document.getElementById("search-news-form");
@@ -570,8 +859,27 @@
         });
     }
 
-    document.getElementById("startDate").addEventListener("input", () => setDateRangeError(null));
-    document.getElementById("endDate").addEventListener("input", () => setDateRangeError(null));
+    // "To date" is only meaningful once a "From date" has been chosen, so
+    // it stays disabled (and gets cleared) until startDate has a value --
+    // this is the from/to dependency requested, kept local to this form.
+    const startDateInput = document.getElementById("startDate");
+    const endDateInput = document.getElementById("endDate");
+
+    function syncEndDateAvailability() {
+        const hasStart = Boolean(startDateInput.value);
+        endDateInput.disabled = !hasStart;
+        if (!hasStart) {
+            endDateInput.value = "";
+        }
+    }
+
+    startDateInput.addEventListener("input", () => {
+        setDateRangeError(null);
+        syncEndDateAvailability();
+    });
+    endDateInput.addEventListener("input", () => setDateRangeError(null));
+
+    syncEndDateAvailability();
 
     searchForm.addEventListener("submit", (e) => {
         e.preventDefault();
@@ -595,6 +903,7 @@
         searchLocationController.clear();
         loadSearchPeopleOptions(document.getElementById("searchActiveOnly").checked);
         clearTermPiles();
+        syncEndDateAvailability();
     });
 
     resultsCloseBtn.addEventListener("click", closeResultsModal);

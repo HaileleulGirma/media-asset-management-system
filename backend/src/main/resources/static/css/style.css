@@ -463,6 +463,11 @@ button, .btn {
     box-shadow: 0 8px 32px rgba(15, 20, 28, 0.25);
 }
 
+/* Wider variant for modals with two side-by-side tables (staff summary) */
+.modal-content--wide {
+    max-width: min(1680px, 96vw);
+}
+
 .modal-header {
     display: flex;
     align-items: center;
@@ -606,6 +611,42 @@ tr:hover td {
     display: none !important;
 }
 
+/* ---------- Status badges (active/inactive) ---------- */
+
+.badge-active {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    background: var(--color-success-bg);
+    color: var(--color-success-text);
+}
+
+.badge-inactive {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    background: var(--color-bg);
+    color: var(--color-text-muted);
+    border: 1px solid var(--color-border);
+}
+
+/* ---------- Management page header row (title + Add button) ---------- */
+
+.panel-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+.panel-header-row h2 {
+    margin: 0;
+}
+
 /* ---------- Modify/Delete search row ---------- */
 
 .modify-search-row {
@@ -667,4 +708,132 @@ tr:hover td {
     gap: 10px;
     justify-content: flex-end;
     margin-top: 8px;
+}
+
+/* ---------- Staff summary ---------- */
+
+.summary-search-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    align-items: flex-end;
+    max-width: 760px;
+    margin-bottom: 16px;
+}
+
+.summary-search-row .field {
+    flex: 1;
+    min-width: 160px;
+    margin-bottom: 0;
+}
+
+.summary-search-row .btn {
+    flex: none;
+}
+
+.summary-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+    max-width: 640px;
+}
+
+.summary-card {
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    padding: 16px;
+}
+
+.summary-card-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    margin-bottom: 6px;
+}
+
+.summary-card-value {
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.summary-card-sub {
+    font-size: 12px;
+    color: var(--color-text-muted);
+    margin-top: 2px;
+}
+
+.summary-card-detail {
+    font-size: 13px;
+    color: var(--color-text);
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--color-border);
+}
+
+.summary-section {
+    margin-top: 0;
+}
+
+.summary-section h3 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    margin: 0 0 10px;
+}
+
+.summary-panels {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    align-items: start;
+}
+
+.summary-table-wrap {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    max-height: 420px;
+    overflow-y: auto;
+}
+
+.summary-table-wrap table {
+    table-layout: fixed;
+}
+
+.summary-table-wrap thead th {
+    position: sticky;
+    top: 0;
+    background: var(--color-surface);
+    z-index: 1;
+}
+
+.summary-table-wrap td {
+    word-break: break-word;
+}
+
+.summary-table-wrap th:nth-child(1),
+.summary-table-wrap td:nth-child(1) { width: 9%; }
+.summary-table-wrap th:nth-child(2),
+.summary-table-wrap td:nth-child(2) { width: 22%; }
+.summary-table-wrap th:nth-child(3),
+.summary-table-wrap td:nth-child(3) { width: 17%; }
+.summary-table-wrap th:nth-child(4),
+.summary-table-wrap td:nth-child(4) { width: 17%; }
+.summary-table-wrap th:nth-child(5),
+.summary-table-wrap td:nth-child(5) { width: 17%; }
+.summary-table-wrap th:nth-child(6),
+.summary-table-wrap td:nth-child(6) { width: 9%; }
+.summary-table-wrap th:nth-child(7),
+.summary-table-wrap td:nth-child(7) { width: 9%; }
+
+@media (max-width: 900px) {
+    .summary-panels {
+        grid-template-columns: 1fr;
+    }
 }

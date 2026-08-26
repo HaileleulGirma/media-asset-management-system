@@ -16,6 +16,7 @@
             <button type="button" id="tab-search-btn" class="tab-btn">Search</button>
             <button type="button" id="tab-add-btn" class="tab-btn hidden">Add news item</button>
             <button type="button" id="tab-modify-btn" class="tab-btn hidden">Modify News</button>
+            <button type="button" id="tab-staff-btn" class="tab-btn hidden">Staff Summary</button>
         </div>
 
         <!-- Create News panel: entire tab hidden for Viewer role via news.js -->
@@ -269,6 +270,43 @@
             </table>
         </div>
 
+        <!-- Staff summary panel -->
+        <div id="staff-summary-panel" class="panel hidden">
+            <h2>Staff summary</h2>
+            <p class="hint">Select a staff member and a date range, then load their summary. Results open in a separate panel, same as Search.</p>
+
+            <div class="field">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="summaryActiveOnly" checked />
+                    Active only
+                </label>
+                <div class="hint">Off shows only inactive staff.</div>
+            </div>
+
+            <div class="summary-search-row">
+                <div class="field">
+                    <label for="summaryStaffId">Staff member</label>
+                    <select id="summaryStaffId">
+                        <option value="">Select staff member...</option>
+                    </select>
+                    <div class="field-error"></div>
+                </div>
+                <div class="field">
+                    <label for="summaryStartDate">From date</label>
+                    <input type="date" id="summaryStartDate" />
+                    <div class="field-error"></div>
+                </div>
+                <div class="field">
+                    <label for="summaryEndDate">To date</label>
+                    <input type="date" id="summaryEndDate" />
+                    <div class="field-error"></div>
+                </div>
+                <button type="button" id="summaryLoadBtn" class="btn btn-primary">Load summary</button>
+            </div>
+
+            <div id="summary-alert" class="alert"></div>
+        </div>
+
         <div id="search-results-overlay" class="modal-overlay hidden">
             <div class="modal-content">
                 <div class="modal-header">
@@ -419,6 +457,93 @@
                             <button type="button" id="edit-news-cancel" class="btn btn-secondary">Cancel</button>
                         </div>
                     </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Staff summary results modal: detached from the filter panel, same
+             pattern as the search results modal, so a busy staff member's
+             lists don't crowd (or overflow past) the filters. Imported and
+             ingested each get their own pagination -- paging one never
+             affects the other. -->
+        <div id="summary-results-overlay" class="modal-overlay hidden">
+            <div class="modal-content modal-content--wide">
+                <div class="modal-header">
+                    <h2>Staff summary</h2>
+                    <button type="button" id="summary-results-close" class="modal-close-btn" aria-label="Close">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div id="summary-modal-loading" class="empty-state">Loading...</div>
+                    <div id="summary-modal-empty" class="empty-state hidden">This staff member has no imported or ingested news in this range.</div>
+
+                    <div id="summary-modal-content" class="hidden">
+                        <div id="summary-stats" class="summary-stats">
+                            <div class="summary-card">
+                                <div class="summary-card-label">Imported</div>
+                                <div class="summary-card-value" id="summaryImportedCount">0</div>
+                                <div class="summary-card-sub">news items</div>
+                                <div class="summary-card-detail"><span id="summaryImportedFiles">0</span> files &middot; <span id="summaryImportedSize">0.00</span> GB</div>
+                            </div>
+                            <div class="summary-card">
+                                <div class="summary-card-label">Ingested</div>
+                                <div class="summary-card-value" id="summaryIngestedCount">0</div>
+                                <div class="summary-card-sub">news items</div>
+                                <div class="summary-card-detail"><span id="summaryIngestedFiles">0</span> files &middot; <span id="summaryIngestedSize">0.00</span> GB</div>
+                            </div>
+                        </div>
+
+                        <div class="summary-panels">
+                            <div class="summary-section">
+                                <h3>News imported</h3>
+                                <div class="summary-table-wrap">
+                                    <table id="summary-imported-table">
+                                        <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Title</th>
+                                            <th>Cameramen</th>
+                                            <th>Reporters</th>
+                                            <th>Locations</th>
+                                            <th>Files</th>
+                                            <th>Size (GB)</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody id="summary-imported-body"></tbody>
+                                    </table>
+                                </div>
+                                <div class="pagination">
+                                    <button type="button" id="summary-imported-prev" class="btn btn-secondary">Previous</button>
+                                    <span id="summary-imported-page-status"></span>
+                                    <button type="button" id="summary-imported-next" class="btn btn-secondary">Next</button>
+                                </div>
+                            </div>
+
+                            <div class="summary-section">
+                                <h3>News ingested</h3>
+                                <div class="summary-table-wrap">
+                                    <table id="summary-ingested-table">
+                                        <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Title</th>
+                                            <th>Cameramen</th>
+                                            <th>Reporters</th>
+                                            <th>Locations</th>
+                                            <th>Files</th>
+                                            <th>Size (GB)</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody id="summary-ingested-body"></tbody>
+                                    </table>
+                                </div>
+                                <div class="pagination">
+                                    <button type="button" id="summary-ingested-prev" class="btn btn-secondary">Previous</button>
+                                    <span id="summary-ingested-page-status"></span>
+                                    <button type="button" id="summary-ingested-next" class="btn btn-secondary">Next</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

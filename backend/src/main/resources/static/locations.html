@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Locations — MAM</title>
+    <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+<div class="app-shell">
+    <div id="app-nav"></div>
+
+    <div class="main-content">
+        <div class="panel">
+            <div class="panel-header-row">
+                <h2>Locations</h2>
+                <button type="button" id="add-location-btn" class="btn btn-primary hidden">+ Add location</button>
+            </div>
+
+            <div class="field">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="locationsAbroadOnly" />
+                    Is abroad
+                </label>
+                <div class="hint">Unchecked shows local locations. Check to show abroad locations instead.</div>
+            </div>
+
+            <div id="locations-alert" class="alert"></div>
+
+            <div id="locations-empty" class="empty-state hidden">No locations found.</div>
+            <table id="locations-table" class="hidden">
+                <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Category</th>
+                    <th id="locations-actions-header" class="hidden">Actions</th>
+                </tr>
+                </thead>
+                <tbody id="locations-body"></tbody>
+            </table>
+
+            <div id="locations-pagination" class="pagination hidden">
+                <button type="button" id="locations-page-prev" class="btn btn-secondary">Previous</button>
+                <span id="locations-page-status"></span>
+                <button type="button" id="locations-page-next" class="btn btn-secondary">Next</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit location modal -->
+    <div id="location-modal-overlay" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="location-modal-title">Add location</h2>
+                <button type="button" id="location-modal-close" class="modal-close-btn" aria-label="Close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="location-modal-alert" class="alert"></div>
+
+                <form id="location-form" novalidate>
+                    <input type="hidden" id="locationId" />
+
+                    <div class="field" data-field="locationName">
+                        <label for="locationName">Name</label>
+                        <input type="text" id="locationName" required />
+                        <div class="field-error"></div>
+                    </div>
+
+                    <div class="field" data-field="isAbroad">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="locationIsAbroad" />
+                            Is abroad
+                        </label>
+                        <div class="field-error"></div>
+                    </div>
+
+                    <div class="modal-actions">
+                        <button type="submit" id="location-form-submit" class="btn btn-primary">Save</button>
+                        <button type="button" id="location-form-cancel" class="btn btn-secondary">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/nav.js"></script>
+<script src="/js/locations.js"></script>
+</body>
+</html>

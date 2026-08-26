@@ -147,3 +147,14 @@ function hideAlert(alertEl) {
     alertEl.className = "alert";
     alertEl.textContent = "";
 }
+
+/**
+ * Shared HTML-escaping helper for rendering user-supplied text into
+ * innerHTML templates safely. Used across news.js and the management
+ * pages (reporters, cameramen, locations, staff, users).
+ */
+function escapeHtml(str) {
+    const div = document.createElement("div");
+    div.textContent = str == null ? "" : str;
+    return div.innerHTML;
+}

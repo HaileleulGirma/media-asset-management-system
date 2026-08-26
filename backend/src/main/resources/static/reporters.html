@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Reporters — MAM</title>
+    <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+<div class="app-shell">
+    <div id="app-nav"></div>
+
+    <div class="main-content">
+        <div class="panel">
+            <div class="panel-header-row">
+                <h2>Reporters</h2>
+                <button type="button" id="add-reporter-btn" class="btn btn-primary hidden">+ Add reporter</button>
+            </div>
+
+            <div class="field">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="reportersActiveOnly" checked />
+                    Active only
+                </label>
+            </div>
+
+            <div id="reporters-alert" class="alert"></div>
+
+            <div id="reporters-empty" class="empty-state hidden">No reporters found.</div>
+            <table id="reporters-table" class="hidden">
+                <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Status</th>
+                    <th id="reporters-actions-header" class="hidden">Actions</th>
+                </tr>
+                </thead>
+                <tbody id="reporters-body"></tbody>
+            </table>
+
+            <div id="reporters-pagination" class="pagination hidden">
+                <button type="button" id="reporters-page-prev" class="btn btn-secondary">Previous</button>
+                <span id="reporters-page-status"></span>
+                <button type="button" id="reporters-page-next" class="btn btn-secondary">Next</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit reporter modal -->
+    <div id="reporter-modal-overlay" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="reporter-modal-title">Add reporter</h2>
+                <button type="button" id="reporter-modal-close" class="modal-close-btn" aria-label="Close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="reporter-modal-alert" class="alert"></div>
+
+                <form id="reporter-form" novalidate>
+                    <input type="hidden" id="reporterId" />
+
+                    <div class="field" data-field="reporterName">
+                        <label for="reporterName">Name</label>
+                        <input type="text" id="reporterName" required />
+                        <div class="hint">Must include first and last name.</div>
+                        <div class="field-error"></div>
+                    </div>
+
+                    <div class="field" data-field="isActive">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="reporterIsActive" checked />
+                            Active
+                        </label>
+                        <div class="field-error"></div>
+                    </div>
+
+                    <div class="modal-actions">
+                        <button type="submit" id="reporter-form-submit" class="btn btn-primary">Save</button>
+                        <button type="button" id="reporter-form-cancel" class="btn btn-secondary">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/nav.js"></script>
+<script src="/js/reporters.js"></script>
+</body>
+</html>
