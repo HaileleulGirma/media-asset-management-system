@@ -10,7 +10,7 @@
 <div class="login-page">
     <div class="login-card">
         <h1>Media Asset Management</h1>
-        <p class="subtitle">Sign in with your staff account</p>
+        <p class="subtitle">Sign in with your account</p>
 
         <div id="login-alert" class="alert"></div>
 
@@ -23,7 +23,10 @@
 
             <div class="field" data-field="password">
                 <label for="password">Password</label>
-                <input type="password" id="password" name="password" autocomplete="current-password" required />
+                <div class="password-field-wrap">
+                    <input type="password" id="password" name="password" autocomplete="current-password" required />
+                    <button type="button" id="password-toggle" class="password-toggle-btn" aria-label="Show password">Show</button>
+                </div>
                 <div class="field-error"></div>
             </div>
 
