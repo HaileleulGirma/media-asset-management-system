@@ -67,8 +67,10 @@ public class SecurityConfig {
                                         "/cameramen.html",
                                         "/locations.html",
                                         "/staff.html",
+                                        "/users.html",
                                         "/css/**",
-                                        "/js/**").permitAll()
+                                        "/js/**",
+                                        "/images/**").permitAll()
                         .anyRequest().authenticated()
 //                                .anyRequest().permitAll()
                 )
