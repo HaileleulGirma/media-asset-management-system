@@ -24,6 +24,7 @@
     const roleLabel = isAdmin ? "Admin" : isStaff ? "Staff" : "Viewer";
 
     const navHtml = `
+<img src="/images/ena_logo_full.png" alt="Agency Logo" class="topnav-logo" />
     <div class="topnav-brand">MAM</div>
     <div class="topnav-links">
       ${navLink("news.html", "News", true)}
@@ -31,6 +32,7 @@
       ${navLink("cameramen.html", "Cameramen", isAdminOrStaff)}
       ${navLink("locations.html", "Locations", isAdminOrStaff)}
       ${navLink("staff.html", "Staff", isAdminOrStaff)}
+      ${navLink("users.html", "Users", isAdmin)}
     </div>
     <div class="topnav-user">
       <span class="role-badge">${roleLabel}</span>
