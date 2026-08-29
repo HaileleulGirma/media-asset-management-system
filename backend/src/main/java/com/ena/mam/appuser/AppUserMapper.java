@@ -22,8 +22,10 @@ public class AppUserMapper {
 
         AppUser appUser = new AppUser();
         appUser.setUsername(request.username());
+        appUser.setFullName(request.fullName()); // 🐛 BUG 2 FIXED
         appUser.setPassword(request.password());
         appUser.setRole(role);
+
         return appUser;
     }
 
@@ -31,6 +33,7 @@ public class AppUserMapper {
         return new CreateAppUserResponse(
                 appUser.getUserId(),
                 appUser.getUsername(),
+                appUser.getFullName(),
                 appUser.getRole().getRoleId()
         );
     }

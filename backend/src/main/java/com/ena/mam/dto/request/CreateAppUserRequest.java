@@ -9,7 +9,7 @@ public record CreateAppUserRequest(
         @NotBlank(message = "Username cannot be empty.")
         String username,
 
-        @NotBlank(message = "Username cannot be empty.")
+        @NotBlank(message = "Full name cannot be empty.")
         String fullName,
 
         @NotBlank(message = "Password cannot be empty.")
