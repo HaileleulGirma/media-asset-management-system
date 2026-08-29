@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>User Management — MAM</title>
+    <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+<div class="app-shell">
+    <div id="app-nav"></div>
+
+    <div class="main-content">
+        <div class="panel">
+            <div class="panel-header-row">
+                <h2>Users</h2>
+                <button type="button" id="add-user-btn" class="btn btn-primary hidden">+ Add user</button>
+            </div>
+
+            <div id="users-alert" class="alert"></div>
+
+            <div id="users-empty" class="empty-state hidden">No users found.</div>
+            <table id="users-table" class="hidden">
+                <thead>
+                <tr>
+                    <th>Full Name</th>
+                    <th>Username</th>
+                    <th>Role</th>
+                    <th id="users-actions-header" class="hidden">Actions</th>
+                </tr>
+                </thead>
+                <tbody id="users-body"></tbody>
+            </table>
+
+            <div id="users-pagination" class="pagination hidden">
+                <button type="button" id="users-page-prev" class="btn btn-secondary">Previous</button>
+                <span id="users-page-status"></span>
+                <button type="button" id="users-page-next" class="btn btn-secondary">Next</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit user modal -->
+    <div id="user-modal-overlay" class="modal-overlay hidden">
+        <div class="modal-content" style="max-width: 480px;">
+            <div class="modal-header">
+                <h2 id="user-modal-title">Add user</h2>
+                <button type="button" id="user-modal-close" class="modal-close-btn" aria-label="Close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="user-modal-alert" class="alert"></div>
+
+                <form id="user-form" novalidate>
+                    <input type="hidden" id="userId" />
+
+                    <!-- Changed from fullName to fullname to match DTO -->
+                    <div class="field" data-field="fullname">
+                        <label for="fullname">Full Name</label>
+                        <input type="text" id="fullname" required />
+                        <div class="field-error"></div>
+                    </div>
+
+                    <div class="field" data-field="username">
+                        <label for="username">Username</label>
+                        <input type="text" id="username" required />
+                        <div class="hint" id="username-hint"></div>
+                        <div class="field-error"></div>
+                    </div>
+
+                    <div class="field" data-field="role">
+                        <label for="userRole">Role</label>
+                        <select id="userRole" required>
+                            <!-- Roles populated via JS -->
+                        </select>
+                        <div class="hint" id="role-hint"></div>
+                        <div class="field-error"></div>
+                    </div>
+
+                    <div class="field" data-field="password">
+                        <label for="password">Password</label>
+                        <div class="password-field-wrap">
+                            <input type="password" id="password" />
+                            <button type="button" class="password-toggle-btn" id="password-toggle">Show</button>
+                        </div>
+                        <div class="hint" id="password-hint">Required. Must be at least 4 characters.</div>
+                        <div class="field-error"></div>
+                    </div>
+
+                    <div class="modal-actions">
+                        <button type="submit" id="user-form-submit" class="btn btn-primary">Save</button>
+                        <button type="button" id="user-form-cancel" class="btn btn-secondary">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/nav.js"></script>
+<script src="/js/users.js"></script>
+</body>
+</html>
