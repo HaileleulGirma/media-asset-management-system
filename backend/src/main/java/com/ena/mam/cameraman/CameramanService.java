@@ -2,6 +2,7 @@ package com.ena.mam.cameraman;
 
 import com.ena.mam.dto.request.CreateCameramanRequest;
 import com.ena.mam.dto.response.CreateCameramanResponse;
+import com.ena.mam.exception.DuplicateResourceException;
 import com.ena.mam.exception.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 
@@ -18,18 +19,27 @@ public class CameramanService {
     }
 
     public CreateCameramanResponse create(CreateCameramanRequest request){
+        if (cameramanRepository.existsByCameramanNameIgnoreCase(request.cameramanName())) {
+            throw new DuplicateResourceException(
+                    "A cameraman named '%s' already exists.".formatted(request.cameramanName()));
+        }
         Cameraman cameraman = cameramanMapper.toCameraman(request);
         Cameraman savedCameraman = cameramanRepository.save(cameraman);
         return cameramanMapper.toResponse(savedCameraman);
     }
 
     public CreateCameramanResponse update(Long cameramanId, CreateCameramanRequest request){
-        Cameraman cameraman = cameramanRepository.findById(cameramanId).orElseThrow(() -> new ResourceNotFoundException("Cameraman with id %d not found.".formatted(cameramanId)));
+        Cameraman cameraman = cameramanRepository.findById(cameramanId)
+                .orElseThrow(() -> new ResourceNotFoundException("Cameraman with id %d not found.".formatted(cameramanId)));
+
+        if (cameramanRepository.existsByCameramanNameIgnoreCaseAndCameramanIdNot(request.cameramanName(), cameramanId)) {
+            throw new DuplicateResourceException(
+                    "A cameraman named '%s' already exists.".formatted(request.cameramanName()));
+        }
+
         cameraman.setCameramanName(request.cameramanName());
         cameraman.setActive(request.isActive());
-
         Cameraman savedCameraman = cameramanRepository.save(cameraman);
-
         return cameramanMapper.toResponse(savedCameraman);
     }
 
