@@ -2,6 +2,7 @@ package com.ena.mam.location;
 
 import com.ena.mam.dto.request.CreateLocationRequest;
 import com.ena.mam.dto.response.CreateLocationResponse;
+import com.ena.mam.exception.DuplicateResourceException;
 import com.ena.mam.exception.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 
@@ -18,19 +19,27 @@ public class LocationService {
     }
 
     public CreateLocationResponse create(CreateLocationRequest request){
+        if (locationRepository.existsByLocationNameIgnoreCase(request.locationName())) {
+            throw new DuplicateResourceException(
+                    "A location named '%s' already exists.".formatted(request.locationName()));
+        }
         Location location = locationMapper.toLocation(request);
         Location savedLocation = locationRepository.save(location);
-
         return locationMapper.toResponse(savedLocation);
     }
 
     public CreateLocationResponse update(Long id, CreateLocationRequest request){
-        Location location = locationRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Location with id %d not found.".formatted(id)));
+        Location location = locationRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Location with id %d not found.".formatted(id)));
+
+        if (locationRepository.existsByLocationNameIgnoreCaseAndLocationIdNot(request.locationName(), id)) {
+            throw new DuplicateResourceException(
+                    "A location named '%s' already exists.".formatted(request.locationName()));
+        }
+
         location.setLocationName(request.locationName());
         location.setAbroad(request.isAbroad());
-
         Location savedLocation = locationRepository.save(location);
-
         return locationMapper.toResponse(savedLocation);
     }
 
