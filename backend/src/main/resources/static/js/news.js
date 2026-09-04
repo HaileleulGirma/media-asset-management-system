@@ -444,6 +444,7 @@
                     <td>${namesFor(item.cameramanIds, nameMaps.cameramen)}</td>
                     <td>${namesFor(item.reporterIds, nameMaps.reporters)}</td>
                     <td>${namesFor(item.locationIds, nameMaps.locations)}</td>
+                    <td>${escapeHtml(item.filePath ?? "")}</td>
                     <td>${item.numberOfFiles ?? ""}</td>
                     <td>${item.totalSize != null ? item.totalSize.toFixed(2) : ""}</td>
                     <td>${importerName}</td>
@@ -743,6 +744,7 @@
                     <td>${namesFor(item.cameramanIds, nameMaps.cameramen)}</td>
                     <td>${namesFor(item.reporterIds, nameMaps.reporters)}</td>
                     <td>${namesFor(item.locationIds, nameMaps.locations)}</td>
+                    <td>${escapeHtml(item.filePath ?? "")}</td>
                     <td>${item.numberOfFiles ?? ""}</td>
                     <td>${item.totalSize != null ? item.totalSize.toFixed(2) : ""}</td>
                 `;
@@ -1105,6 +1107,7 @@
         <td>${namesFor(item.cameramanIds, nameMaps.cameramen)}</td>
         <td>${namesFor(item.reporterIds, nameMaps.reporters)}</td>
         <td>${namesFor(item.locationIds, nameMaps.locations)}</td>
+        <td>${escapeHtml(item.filePath ?? "")}</td>
         <td>${item.numberOfFiles ?? ""}</td>
         <td>${item.totalSize != null ? item.totalSize.toFixed(2) : ""}</td>
       `;

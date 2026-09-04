@@ -65,6 +65,12 @@
     `;
     document.querySelector(".main-content").insertBefore(adminPanel, document.querySelector(".main-content .panel"));
 
+    // Declared here (rather than down with the rest of the modal refs) because
+    // loadRoles() runs next and calls rebuildRoleOptions(), which needs
+    // roleSelect to already be initialized.
+    const roleSelect = document.getElementById("userRole");
+    const roleHint = document.getElementById("role-hint");
+
     try {
         await loadRoles();
         await loadUsers();
@@ -78,7 +84,20 @@
         // offered, regardless of what else exists in the roles table.
         assignableRoles = allRoles.filter(role => ASSIGNABLE_ROLE_NAMES.includes(role.roleName));
 
-        const roleSelect = document.getElementById("userRole");
+        // Base population; rebuildRoleOptions() is called again (with an
+        // optional extra role) each time the modal is opened, so this
+        // just makes sure the <select> isn't empty before that happens.
+        rebuildRoleOptions();
+    }
+
+    // Rebuilds the #userRole <select> from the assignable-roles allow-list.
+    // If extraRole is passed and isn't already in that allow-list (e.g. the
+    // system admin's ADMIN role), it's appended as an extra option so the
+    // select can correctly display/select it for THIS modal open only.
+    // Called fresh every time the modal opens so a non-assignable role
+    // never lingers as a selectable choice for Add-user or for editing a
+    // different, regular user.
+    function rebuildRoleOptions(extraRole) {
         roleSelect.innerHTML = '<option value="">Select a role...</option>';
         assignableRoles.forEach(role => {
             const opt = document.createElement("option");
@@ -86,6 +105,12 @@
             opt.textContent = role.roleName.replace("ROLE_", "");
             roleSelect.appendChild(opt);
         });
+        if (extraRole && !assignableRoles.some(r => r.roleId === extraRole.roleId)) {
+            const opt = document.createElement("option");
+            opt.value = extraRole.roleId;
+            opt.textContent = extraRole.roleName.replace("ROLE_", "");
+            roleSelect.appendChild(opt);
+        }
     }
 
     function roleNameFor(user) {
@@ -231,11 +256,11 @@
     const pwToggle = document.getElementById("password-toggle");
     const pwHint = document.getElementById("password-hint");
 
+    const pwConfirmInput = document.getElementById("confirmPassword");
+    const pwConfirmToggle = document.getElementById("confirm-password-toggle");
+
     const usernameInput = document.getElementById("username");
     const usernameHint = document.getElementById("username-hint");
-
-    const roleSelect = document.getElementById("userRole");
-    const roleHint = document.getElementById("role-hint");
 
     addBtn.addEventListener("click", openAddModal);
 
@@ -246,6 +271,16 @@
         } else {
             pwInput.type = "password";
             pwToggle.textContent = "Show";
+        }
+    });
+
+    pwConfirmToggle.addEventListener("click", () => {
+        if (pwConfirmInput.type === "password") {
+            pwConfirmInput.type = "text";
+            pwConfirmToggle.textContent = "Hide";
+        } else {
+            pwConfirmInput.type = "password";
+            pwConfirmToggle.textContent = "Show";
         }
     });
 
@@ -270,9 +305,14 @@
         pwHint.textContent = "Required. Must be at least 4 characters.";
         pwInput.required = true;
 
+        pwConfirmInput.type = "password";
+        pwConfirmToggle.textContent = "Show";
+        pwConfirmInput.required = true;
+
         usernameInput.disabled = false;
         usernameHint.textContent = "";
 
+        rebuildRoleOptions();
         roleSelect.disabled = false;
         roleHint.textContent = "";
 
@@ -287,12 +327,19 @@
         document.getElementById("userId").value = user.id;
         document.getElementById("fullname").value = user.fullname || "";
         usernameInput.value = user.username || "";
+
+        const roleObj = allRoles.find(r => r.roleId === user.role);
+        rebuildRoleOptions(roleObj);
         roleSelect.value = user.role;
 
         pwInput.type = "password";
         pwToggle.textContent = "Show";
         pwHint.textContent = "Leave blank to keep current password.";
         pwInput.required = false;
+
+        pwConfirmInput.type = "password";
+        pwConfirmToggle.textContent = "Show";
+        pwConfirmInput.required = false;
 
         if (isSelf) {
             modalTitle.textContent = "Edit Your Profile";
@@ -337,11 +384,22 @@
 
         const id = document.getElementById("userId").value;
         const passwordValue = pwInput.value;
+        const confirmValue = pwConfirmInput.value;
 
         if (!id && passwordValue.trim().length < 4) {
             const pwField = pwInput.closest(".field");
             pwField.classList.add("has-error");
             pwField.querySelector(".field-error").textContent = "Password must be at least 4 characters long.";
+            return;
+        }
+
+        // Whenever a password is actually being set -- new user, or an
+        // edit where the password field was filled in -- the confirm
+        // field must match it exactly.
+        if (passwordValue && passwordValue !== confirmValue) {
+            const confirmField = pwConfirmInput.closest(".field");
+            confirmField.classList.add("has-error");
+            confirmField.querySelector(".field-error").textContent = "Passwords do not match.";
             return;
         }
 
