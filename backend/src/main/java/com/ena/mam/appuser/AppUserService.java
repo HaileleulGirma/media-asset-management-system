@@ -18,7 +18,9 @@ public class AppUserService {
     // The only roles this service will ever assign. The admin role is
     // deliberately left out -- there is exactly one system administrator
     // account, created outside this flow (see DataSeeder), and it can
-    // never be created, promoted into, edited, or deleted here.
+    // never be created, promoted into, or deleted here. It CAN be edited
+    // by itself (see update() below) for name/username/password, but its
+    // role can never change and no one else can edit it.
     private static final Set<String> ASSIGNABLE_ROLE_NAMES = Set.of("VIEWER", "STAFF");
 
     private final AppUserMapper appUserMapper;
@@ -65,10 +67,29 @@ public class AppUserService {
         AppUser appUser = appUserRepository.findById(appUserId)
                 .orElseThrow(() -> new ResourceNotFoundException("AppUser with id %d not found.".formatted(appUserId)));
 
-        // The system administrator account is fixed and can't be edited
-        // through this endpoint at all, regardless of what's requested.
-        if (!isAssignable(appUser.getRole())) {
+        boolean isSelf = appUserId.equals(currentUserId());
+        boolean targetIsNonAssignable = !isAssignable(appUser.getRole());
+
+        // A non-assignable account (i.e. the system admin) can only ever be
+        // edited by itself. Anyone else touching it -- even another admin,
+        // if one somehow existed -- is rejected outright, same as before.
+        if (targetIsNonAssignable && !isSelf) {
             throw new IllegalArgumentException("This account cannot be edited here.");
+        }
+
+        if (targetIsNonAssignable) {
+            // Admin editing its own profile: role is fixed and intentionally
+            // never looked up or reassigned here, so there's no risk of the
+            // admin role being changed or removed through this path.
+            appUser.setFullName(request.fullName());
+            appUser.setUsername(request.username());
+
+            if (request.password() != null && !request.password().trim().isEmpty()) {
+                appUser.setPassword(passwordEncoder.encode(request.password()));
+            }
+
+            AppUser savedAppUser = appUserRepository.save(appUser);
+            return appUserMapper.toResponse(savedAppUser);
         }
 
         AppRole newRole = appRoleRepository.findById(request.role())
@@ -78,7 +99,6 @@ public class AppUserService {
             throw new IllegalArgumentException("That role cannot be assigned.");
         }
 
-        boolean isSelf = appUserId.equals(currentUserId());
         if (isSelf && !appUser.getRole().getRoleId().equals(request.role())) {
             throw new IllegalArgumentException("You cannot change your own role.");
         }
