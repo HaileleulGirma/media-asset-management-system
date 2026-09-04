@@ -7,4 +7,7 @@ import java.util.List;
 public interface StaffMemberRepository extends JpaRepository<StaffMember, Long> {
     List <StaffMember> findByIsActiveTrue();
     List <StaffMember> findByIsActiveFalse();
+
+    boolean existsByStaffMemberNameIgnoreCase(String staffMemberName);
+    boolean existsByStaffMemberNameIgnoreCaseAndStaffMemberIdNot(String staffMemberName, Long staffMemberId);
 }

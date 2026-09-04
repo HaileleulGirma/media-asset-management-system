@@ -2,6 +2,7 @@ package com.ena.mam.staffmember;
 
 import com.ena.mam.dto.request.CreateStaffMemberRequest;
 import com.ena.mam.dto.response.CreateStaffMemberResponse;
+import com.ena.mam.exception.DuplicateResourceException;
 import com.ena.mam.exception.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 
@@ -18,6 +19,10 @@ public class StaffMemberService {
     }
 
     public CreateStaffMemberResponse create(CreateStaffMemberRequest request){
+        if (staffMemberRepository.existsByStaffMemberNameIgnoreCase(request.staffMemberName())) {
+            throw new DuplicateResourceException(
+                    "A staff member named '%s' already exists.".formatted(request.staffMemberName()));
+        }
         StaffMember staffMember = staffMemberMapper.toStaffMember(request);
         StaffMember savedStaffMember = staffMemberRepository.save(staffMember);
         return staffMemberMapper.toResponse(savedStaffMember);
@@ -27,9 +32,13 @@ public class StaffMemberService {
         StaffMember staffMember = staffMemberRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Staff Member with id %d not found.".formatted(id)));
 
+        if (staffMemberRepository.existsByStaffMemberNameIgnoreCaseAndStaffMemberIdNot(request.staffMemberName(), id)) {
+            throw new DuplicateResourceException(
+                    "A staff member named '%s' already exists.".formatted(request.staffMemberName()));
+        }
+
         staffMember.setStaffMemberName(request.staffMemberName());
         staffMember.setActive(request.isActive());
-
         StaffMember savedStaffMember = staffMemberRepository.save(staffMember);
         return staffMemberMapper.toResponse(savedStaffMember);
     }
