@@ -7,4 +7,7 @@ import java.util.List;
 public interface ReporterRepository extends JpaRepository<Reporter, Long> {
     List <Reporter> findByIsActiveTrue();
     List <Reporter> findByIsActiveFalse();
+
+    boolean existsByReporterNameIgnoreCase(String reporterName);
+    boolean existsByReporterNameIgnoreCaseAndReporterIdNot(String reporterName, Long reporterId);
 }
