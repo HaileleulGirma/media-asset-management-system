@@ -4,7 +4,7 @@
 
 CREATE TABLE staff_member (
                               member_id BIGINT GENERATED ALWAYS AS IDENTITY,
-                              member_name VARCHAR(255) NOT NULL,
+                              member_name VARCHAR(255) NOT NULL UNIQUE,
                               is_active BOOLEAN NOT NULL,
 
                               PRIMARY KEY (member_id)
@@ -12,7 +12,7 @@ CREATE TABLE staff_member (
 
 CREATE TABLE cameraman (
                            cameraman_id BIGINT GENERATED ALWAYS AS IDENTITY,
-                           cameraman_name VARCHAR(255) NOT NULL,
+                           cameraman_name VARCHAR(255) NOT NULL UNIQUE,
                            is_active BOOLEAN NOT NULL,
 
                            PRIMARY KEY (cameraman_id)
@@ -20,7 +20,7 @@ CREATE TABLE cameraman (
 
 CREATE TABLE reporter (
                           reporter_id BIGINT GENERATED ALWAYS AS IDENTITY,
-                          reporter_name VARCHAR(255) NOT NULL,
+                          reporter_name VARCHAR(255) NOT NULL UNIQUE,
                           is_active BOOLEAN NOT NULL,
 
                           PRIMARY KEY (reporter_id)
@@ -28,7 +28,7 @@ CREATE TABLE reporter (
 
 CREATE TABLE location (
                           location_id BIGINT GENERATED ALWAYS AS IDENTITY,
-                          location_name VARCHAR(255) NOT NULL,
+                          location_name VARCHAR(255) NOT NULL UNIQUE,
                           is_abroad BOOLEAN NOT NULL,
 
                           PRIMARY KEY (location_id)
