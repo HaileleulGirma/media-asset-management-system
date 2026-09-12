@@ -1,9 +1,12 @@
 package com.ena.mam.exception;
 
+import com.fasterxml.jackson.databind.JsonMappingException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
@@ -124,14 +127,50 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
-    public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(
-            DataIntegrityViolationException ex) {
-        ErrorResponse errorResponse = new ErrorResponse(
-                "A record with this value already exists.",
-                LocalDateTime.now()
-        );
-        return ResponseEntity
-                .status(HttpStatus.CONFLICT)
-                .body(errorResponse);
+    public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
+        String message = "Database constraint violation occurred.";
+
+        Throwable mostSpecificCause = ex.getMostSpecificCause();
+        String causeMessage = mostSpecificCause.getMessage() != null ? mostSpecificCause.getMessage() : "";
+
+        // 1. Foreign Key Violation (Deleting referenced record or invalid foreign ID)
+        if (causeMessage.contains("foreign key constraint") || causeMessage.contains("violates foreign key")) {
+            message = "Cannot delete this record because it is referenced by other entries. Please remove or reassign those references first.";
+        }
+        // 2. Unique Constraint Violation (Duplicate entry)
+        else if (causeMessage.contains("duplicate key") || causeMessage.contains("already exists")) {
+            message = "A record with this value already exists.";
+        }
+
+        ErrorResponse errorResponse = new ErrorResponse(message, LocalDateTime.now());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse); // 409 Conflict
     }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleHttpMessageNotReadable(HttpMessageNotReadableException ex) {
+        String message = "Invalid request payload format.";
+
+        Throwable mostSpecificCause = ex.getMostSpecificCause();
+        String causeMessage = mostSpecificCause.getMessage() != null ? mostSpecificCause.getMessage() : "";
+
+        // 1. Detect float-to-int coercion failure directly from Jackson's error message
+        if (causeMessage.contains("ACCEPT_FLOAT_AS_INT") || causeMessage.contains("Floating-point value")) {
+            message = "Decimals are not allowed for this field. Please enter a whole number.";
+        }
+        // 2. Fall back to extracting the field name for general mapping/type errors
+        else if (ex.getCause() instanceof JsonMappingException jsonMappingException) {
+            String fieldName = "field";
+            if (!jsonMappingException.getPath().isEmpty()) {
+                var lastPath = jsonMappingException.getPath().get(jsonMappingException.getPath().size() - 1);
+                if (lastPath.getFieldName() != null) {
+                    fieldName = lastPath.getFieldName();
+                }
+            }
+            message = String.format("Invalid value provided for '%s'. Please check the input format.", fieldName);
+        }
+
+        ErrorResponse errorResponse = new ErrorResponse(message, LocalDateTime.now());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+
 }
