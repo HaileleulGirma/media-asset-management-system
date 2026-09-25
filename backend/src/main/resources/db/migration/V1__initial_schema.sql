@@ -48,8 +48,8 @@ CREATE TABLE app_role (
 CREATE TABLE news (
                       news_id BIGINT GENERATED ALWAYS AS IDENTITY,
                       title TEXT NOT NULL,
-                      number_of_files INTEGER,
-                      total_size NUMERIC(12,2),
+                      number_of_files INTEGER CONSTRAINT chk_news_number_of_files_positive CHECK (number_of_files > 0),
+                      total_size_gb NUMERIC(12,2) CONSTRAINT chk_news_total_size_positive CHECK (total_size_gb > 0),
                       news_date DATE NOT NULL,
                       file_path TEXT NOT NULL,
 
@@ -72,7 +72,8 @@ CREATE TABLE photo(
                         photo_id BIGINT GENERATED ALWAYS AS IDENTITY,
                         title TEXT NOT NULL,
                         file_path TEXT NOT NULL,
-                        file_size BIGINT NOT NULL,
+                        number_of_files INTEGER CONSTRAINT chk_photo_number_of_files_positive CHECK (number_of_files > 0),
+                        file_size_mb BIGINT NOT NULL CONSTRAINT chk_photo_file_size_positive CHECK (file_size_mb > 0),
                         photo_date DATE NOT NULL,
                         imported_by BIGINT NOT NULL,
                         version BIGINT NOT NULL DEFAULT 0,
@@ -203,4 +204,16 @@ CREATE INDEX idx_app_user_role_id ON app_user(role_id);
 
 CREATE INDEX news_title_fts_idx
     ON news
+        USING gin (to_tsvector('simple', title));
+
+CREATE INDEX photo_title_fts_idx
+    ON photo
+        USING gin (to_tsvector('simple', title));
+
+CREATE INDEX digitized_media_title_fts_idx
+    ON digitized_media
+        USING gin (to_tsvector('simple', title));
+
+CREATE INDEX production_title_fts_idx
+    ON production
         USING gin (to_tsvector('simple', title));
