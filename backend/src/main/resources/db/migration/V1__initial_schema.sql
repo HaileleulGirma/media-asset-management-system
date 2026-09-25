@@ -92,7 +92,7 @@ CREATE TABLE digitized_media(
                         version BIGINT NOT NULL DEFAULT 0,
                         PRIMARY KEY (digitized_media_id),
 
-                        CONSTRAINT fk_legacy_staff
+                        CONSTRAINT fk_digitized_media_staff
                             FOREIGN KEY (imported_by)
                                 REFERENCES staff_member(member_id)
 );
