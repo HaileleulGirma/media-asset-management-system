@@ -84,13 +84,13 @@ CREATE TABLE photo(
 
 );
 
-CREATE TABLE legacy_cassette(
-                        legacy_cassette_media_id BIGINT GENERATED ALWAYS AS IDENTITY,
+CREATE TABLE digitized_media(
+                        digitized_media_id BIGINT GENERATED ALWAYS AS IDENTITY,
                         title TEXT NOT NULL,
                         file_path TEXT NOT NULL,
                         imported_by BIGINT NOT NULL,
                         version BIGINT NOT NULL DEFAULT 0,
-                        PRIMARY KEY (legacy_cassette_media_id),
+                        PRIMARY KEY (digitized_media_id),
 
                         CONSTRAINT fk_legacy_staff
                             FOREIGN KEY (imported_by)
