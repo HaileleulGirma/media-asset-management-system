@@ -49,9 +49,9 @@ CREATE TABLE news (
                       news_id BIGINT GENERATED ALWAYS AS IDENTITY,
                       title TEXT NOT NULL,
                       number_of_files INTEGER,
-                      total_size FLOAT(53),
+                      total_size NUMERIC(12,2),
                       news_date DATE NOT NULL,
-                      file_path VARCHAR(255) NOT NULL,
+                      file_path TEXT NOT NULL,
 
                       imported_by BIGINT NOT NULL,
                       ingested_by BIGINT,
