@@ -68,6 +68,44 @@ CREATE TABLE news (
                               REFERENCES staff_member(member_id)
 );
 
+CREATE TABLE photo(
+                        photo_id BIGINT GENERATED ALWAYS AS IDENTITY,
+                        title TEXT NOT NULL,
+                        file_path TEXT NOT NULL,
+                        file_size BIGINT NOT NULL,
+                        photo_date DATE NOT NULL,
+                        imported_by BIGINT NOT NULL,
+                        version BIGINT NOT NULL DEFAULT 0,
+                        PRIMARY KEY (photo_id),
+
+                            CONSTRAINT fk_photo_staff
+                            FOREIGN KEY (imported_by)
+                                REFERENCES staff_member(member_id)
+
+);
+
+CREATE TABLE legacy_cassette(
+                        legacy_cassette_media_id BIGINT GENERATED ALWAYS AS IDENTITY,
+                        title TEXT NOT NULL,
+                        file_path TEXT NOT NULL,
+                        imported_by BIGINT NOT NULL,
+                        version BIGINT NOT NULL DEFAULT 0,
+                        PRIMARY KEY (legacy_cassette_media_id),
+
+                        CONSTRAINT fk_legacy_staff
+                            FOREIGN KEY (imported_by)
+                                REFERENCES staff_member(member_id)
+);
+
+
+CREATE TABLE production(
+                        production_id BIGINT GENERATED ALWAYS AS IDENTITY,
+                        title TEXT NOT NULL,
+                        file_path TEXT NOT NULL,
+                        version BIGINT NOT NULL DEFAULT 0,
+                        PRIMARY KEY (production_id)
+);
+
 CREATE TABLE app_user (
                           user_id BIGINT GENERATED ALWAYS AS IDENTITY,
                           username VARCHAR(255) NOT NULL UNIQUE,
@@ -132,6 +170,23 @@ CREATE TABLE news_location (
                                CONSTRAINT fk_news_location_location
                                    FOREIGN KEY (location_id)
                                        REFERENCES location(location_id)
+);
+
+CREATE TABLE photo_cameraman (
+                            photo_id BIGINT NOT NULL,
+                            cameraman_id BIGINT NOT NULL,
+
+                            PRIMARY KEY (photo_id, cameraman_id),
+
+                            CONSTRAINT fk_photo_cameraman_photo
+                                FOREIGN KEY (photo_id)
+                                    REFERENCES photo(photo_id)
+                                    ON DELETE CASCADE,
+
+                            CONSTRAINT fk_photo_cameraman_cameraman
+                                FOREIGN KEY (cameraman_id)
+                                    REFERENCES cameraman(cameraman_id)
+
 );
 
 -- =====================================================
