@@ -72,8 +72,8 @@ CREATE TABLE photo(
                         photo_id BIGINT GENERATED ALWAYS AS IDENTITY,
                         title TEXT NOT NULL,
                         file_path TEXT NOT NULL,
-                        number_of_files INTEGER CONSTRAINT chk_photo_number_of_files_positive CHECK (number_of_files > 0),
-                        file_size_mb BIGINT NOT NULL CONSTRAINT chk_photo_file_size_positive CHECK (file_size_mb > 0),
+                        number_of_files INTEGER NOT NULL CONSTRAINT chk_photo_number_of_files_positive CHECK (number_of_files > 0),
+                        file_size_mb NUMERIC(12,2) NOT NULL CONSTRAINT chk_photo_file_size_positive CHECK (file_size_mb > 0),
                         photo_date DATE NOT NULL,
                         imported_by BIGINT NOT NULL,
                         version BIGINT NOT NULL DEFAULT 0,
@@ -103,6 +103,7 @@ CREATE TABLE production(
                         production_id BIGINT GENERATED ALWAYS AS IDENTITY,
                         title TEXT NOT NULL,
                         file_path TEXT NOT NULL,
+                        file_size_gb NUMERIC(12,2) CONSTRAINT chk_production_file_size_positive CHECK (file_size_gb > 0),
                         version BIGINT NOT NULL DEFAULT 0,
                         PRIMARY KEY (production_id)
 );
