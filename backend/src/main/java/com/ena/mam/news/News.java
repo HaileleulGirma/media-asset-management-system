@@ -31,7 +31,7 @@ public class News {
     @Column(name = "number_of_files")
     private Integer numberOfFiles;
 
-    @Column(name = "total_size")
+    @Column(name = "total_size_gb")
     private Double totalSize;
 
     @Column(name = "news_date")
