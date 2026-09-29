@@ -3,7 +3,7 @@ package com.ena.mam.dto.request;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
-public record CreateDigitzedMediaRequest(
+public record CreateDigitizedMediaRequest(
         @NotBlank(message = "Title is required")
         String title,
 
@@ -11,7 +11,8 @@ public record CreateDigitzedMediaRequest(
         String filePath,
 
         @NotNull(message = "Importer is required")
-        Long importedBy
+        Long importedBy,
+        Long version
 
 ) {
 }
