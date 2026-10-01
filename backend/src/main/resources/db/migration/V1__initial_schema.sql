@@ -41,6 +41,13 @@ CREATE TABLE app_role (
                           PRIMARY KEY (role_id)
 );
 
+CREATE TABLE cassette_category(
+                            cassette_category_id BIGINT GENERATED ALWAYS AS IDENTITY,
+                            category_name VARCHAR(255) NOT NULL UNIQUE,
+
+                            PRIMARY KEY (cassette_category_id)
+);
+
 -- =====================================================
 -- TABLES THAT DEPEND ON LOOKUP TABLES
 -- =====================================================
@@ -89,13 +96,18 @@ CREATE TABLE digitized_media(
                         digitized_media_id BIGINT GENERATED ALWAYS AS IDENTITY,
                         title TEXT NOT NULL,
                         file_path TEXT NOT NULL,
+                        category_id BIGINT NOT NULL,
                         imported_by BIGINT NOT NULL,
                         version BIGINT NOT NULL DEFAULT 0,
                         PRIMARY KEY (digitized_media_id),
 
                         CONSTRAINT fk_digitized_media_staff
                             FOREIGN KEY (imported_by)
-                                REFERENCES staff_member(member_id)
+                                REFERENCES staff_member(member_id),
+
+                        CONSTRAINT fk_digitized_media_cassette_category
+                            FOREIGN KEY (category_id)
+                                REFERENCES cassette_category(cassette_category_id)
 );
 
 
