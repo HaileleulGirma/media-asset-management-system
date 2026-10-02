@@ -1,5 +1,6 @@
 package com.ena.mam.digitizedmedia;
 
+import com.ena.mam.cassettecategory.CassetteCategory;
 import com.ena.mam.staffmember.StaffMember;
 import jakarta.persistence.*;
 
@@ -11,7 +12,7 @@ public class DigitizedMedia {
     }
 
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "digitized_media_id")
     private Long digitizedMediaId;
 
@@ -21,10 +22,23 @@ public class DigitizedMedia {
     @Column(name = "file_path")
     private String filePath;
 
+    public CassetteCategory getCassetteCategory() {
+        return cassetteCategory;
+    }
+
+    public void setCassetteCategory(CassetteCategory cassetteCategory) {
+        this.cassetteCategory = cassetteCategory;
+    }
+
+    @ManyToOne
+    @JoinColumn(name = "category_id")
+    private CassetteCategory cassetteCategory;
+
     @ManyToOne
     @JoinColumn(name = "imported_by")
     private StaffMember importer;
 
+    @Version
     @Column(name = "version")
     private Long version;
 

@@ -1,7 +1,7 @@
 package com.ena.mam.digitizedmedia;
 
 import com.ena.mam.dto.request.CreateDigitizedMediaRequest;
-import com.ena.mam.dto.request.DigitizedMediaFilter;
+import com.ena.mam.dto.request.filter.DigitizedMediaFilter;
 import com.ena.mam.dto.response.CreateDigitizedMediaResponse;
 import com.ena.mam.exception.ResourceNotFoundException;
 import com.ena.mam.staffmember.StaffMember;
