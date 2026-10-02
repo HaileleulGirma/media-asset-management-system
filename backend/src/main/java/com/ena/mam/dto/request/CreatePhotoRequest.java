@@ -25,6 +25,7 @@ public record CreatePhotoRequest(
         LocalDate photoDate,
 
         @NotNull(message = "Importer is required")
-        Long importedBy
+        Long importedBy,
+        Long version
 ) {
 }
