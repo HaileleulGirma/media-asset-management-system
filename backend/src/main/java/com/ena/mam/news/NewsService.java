@@ -3,7 +3,7 @@ package com.ena.mam.news;
 import com.ena.mam.cameraman.Cameraman;
 import com.ena.mam.cameraman.CameramanRepository;
 import com.ena.mam.dto.request.CreateNewsRequest;
-import com.ena.mam.dto.request.NewsFilter;
+import com.ena.mam.dto.request.filter.NewsFilter;
 import com.ena.mam.dto.response.CreateNewsResponse;
 import com.ena.mam.exception.ResourceNotFoundException;
 import com.ena.mam.location.Location;
