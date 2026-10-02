@@ -1,4 +1,4 @@
-package com.ena.mam.dto.request;
+package com.ena.mam.dto.request.filter;
 
 import java.time.LocalDate;
 import java.util.Set;
