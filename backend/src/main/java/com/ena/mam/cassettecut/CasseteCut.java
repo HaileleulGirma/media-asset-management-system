@@ -1,4 +1,4 @@
-package com.ena.mam.cassestecut;
+package com.ena.mam.cassettecut;
 
 import jakarta.persistence.*;
 

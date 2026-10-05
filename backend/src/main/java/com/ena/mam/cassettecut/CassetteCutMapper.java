@@ -1,4 +1,4 @@
-package com.ena.mam.cassestecut;
+package com.ena.mam.cassettecut;
 
 import com.ena.mam.dto.request.CreateCassetteCutRequest;
 import com.ena.mam.dto.response.CreateCassetteCutResponse;
