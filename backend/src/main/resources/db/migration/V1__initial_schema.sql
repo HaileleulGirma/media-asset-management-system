@@ -41,12 +41,13 @@ CREATE TABLE app_role (
                           PRIMARY KEY (role_id)
 );
 
-CREATE TABLE cassette_category(
-                            cassette_category_id BIGINT GENERATED ALWAYS AS IDENTITY,
-                            category_name VARCHAR(255) NOT NULL UNIQUE,
+CREATE TABLE cassette_category (
+                                   cassette_category_id BIGINT GENERATED ALWAYS AS IDENTITY,
+                                   category_name VARCHAR(255) NOT NULL UNIQUE,
 
-                            PRIMARY KEY (cassette_category_id)
+                                   PRIMARY KEY (cassette_category_id)
 );
+
 
 -- =====================================================
 -- TABLES THAT DEPEND ON LOOKUP TABLES
@@ -55,8 +56,12 @@ CREATE TABLE cassette_category(
 CREATE TABLE news (
                       news_id BIGINT GENERATED ALWAYS AS IDENTITY,
                       title TEXT NOT NULL,
-                      number_of_files INTEGER CONSTRAINT chk_news_number_of_files_positive CHECK (number_of_files > 0),
-                      total_size_gb NUMERIC(12,2) CONSTRAINT chk_news_total_size_positive CHECK (total_size_gb > 0),
+                      number_of_files INTEGER
+                          CONSTRAINT chk_news_number_of_files_positive
+                              CHECK (number_of_files > 0),
+                      total_size_gb NUMERIC(12,2)
+                          CONSTRAINT chk_news_total_size_positive
+                              CHECK (total_size_gb > 0),
                       news_date DATE NOT NULL,
                       file_path TEXT NOT NULL,
 
@@ -75,50 +80,111 @@ CREATE TABLE news (
                               REFERENCES staff_member(member_id)
 );
 
-CREATE TABLE photo(
-                        photo_id BIGINT GENERATED ALWAYS AS IDENTITY,
-                        title TEXT NOT NULL,
-                        file_path TEXT NOT NULL,
-                        number_of_files INTEGER NOT NULL CONSTRAINT chk_photo_number_of_files_positive CHECK (number_of_files > 0),
-                        file_size_mb NUMERIC(12,2) NOT NULL CONSTRAINT chk_photo_file_size_positive CHECK (file_size_mb > 0),
-                        photo_date DATE NOT NULL,
-                        imported_by BIGINT NOT NULL,
-                        version BIGINT NOT NULL DEFAULT 0,
-                        PRIMARY KEY (photo_id),
 
-                            CONSTRAINT fk_photo_staff
-                            FOREIGN KEY (imported_by)
-                                REFERENCES staff_member(member_id)
+CREATE TABLE photo (
+                       photo_id BIGINT GENERATED ALWAYS AS IDENTITY,
+                       title TEXT NOT NULL,
+                       file_path TEXT NOT NULL,
+                       number_of_files INTEGER NOT NULL
+                           CONSTRAINT chk_photo_number_of_files_positive
+                               CHECK (number_of_files > 0),
+                       file_size_mb NUMERIC(12,2) NOT NULL
+                           CONSTRAINT chk_photo_file_size_positive
+                               CHECK (file_size_mb > 0),
+                       photo_date DATE NOT NULL,
 
-);
+                       imported_by BIGINT NOT NULL,
+                       version BIGINT NOT NULL DEFAULT 0,
 
-CREATE TABLE digitized_media(
-                        digitized_media_id BIGINT GENERATED ALWAYS AS IDENTITY,
-                        title TEXT NOT NULL,
-                        file_path TEXT NOT NULL,
-                        category_id BIGINT NOT NULL,
-                        imported_by BIGINT NOT NULL,
-                        version BIGINT NOT NULL DEFAULT 0,
-                        PRIMARY KEY (digitized_media_id),
+                       PRIMARY KEY (photo_id),
 
-                        CONSTRAINT fk_digitized_media_staff
-                            FOREIGN KEY (imported_by)
-                                REFERENCES staff_member(member_id),
-
-                        CONSTRAINT fk_digitized_media_cassette_category
-                            FOREIGN KEY (category_id)
-                                REFERENCES cassette_category(cassette_category_id)
+                       CONSTRAINT fk_photo_staff
+                           FOREIGN KEY (imported_by)
+                               REFERENCES staff_member(member_id)
 );
 
 
-CREATE TABLE production(
-                        production_id BIGINT GENERATED ALWAYS AS IDENTITY,
-                        title TEXT NOT NULL,
-                        file_path TEXT NOT NULL,
-                        file_size_gb NUMERIC(12,2) CONSTRAINT chk_production_file_size_positive CHECK (file_size_gb > 0),
-                        version BIGINT NOT NULL DEFAULT 0,
-                        PRIMARY KEY (production_id)
+-- =====================================================
+-- DIGITIZED MEDIA / CASSETTES
+--
+-- One record represents one physical cassette.
+-- The cassette itself does not have a content title.
+-- Its identifier identifies the cassette.
+-- The individual content titles belong to cassette_cut.
+-- =====================================================
+
+CREATE TABLE digitized_media (
+                                 digitized_media_id BIGINT GENERATED ALWAYS AS IDENTITY,
+
+                                 identifier_category_id BIGINT NOT NULL,
+                                 identifier_number INTEGER NOT NULL,
+
+                                 file_path TEXT NOT NULL,
+
+                                 imported_by BIGINT NOT NULL,
+                                 version BIGINT NOT NULL DEFAULT 0,
+
+                                 PRIMARY KEY (digitized_media_id),
+
+                                 CONSTRAINT uq_digitized_media_identifier
+                                     UNIQUE (identifier_category_id, identifier_number),
+
+                                 CONSTRAINT fk_digitized_media_identifier_category
+                                     FOREIGN KEY (identifier_category_id)
+                                         REFERENCES cassette_category(cassette_category_id),
+
+                                 CONSTRAINT fk_digitized_media_staff
+                                     FOREIGN KEY (imported_by)
+                                         REFERENCES staff_member(member_id)
 );
+
+
+-- =====================================================
+-- CASSETTE CUTS
+--
+-- One cassette can contain multiple cuts.
+-- Each cut has:
+--   - its own title
+--   - an optional date
+--   - exactly one category
+--   - exactly one parent cassette
+-- =====================================================
+
+CREATE TABLE cassette_cut (
+                              cassette_cut_id BIGINT GENERATED ALWAYS AS IDENTITY,
+
+                              digitized_media_id BIGINT NOT NULL,
+                              cassette_category_id BIGINT NOT NULL,
+
+                              title TEXT NOT NULL,
+                              cut_date DATE,
+                              version BIGINT NOT NULL DEFAULT 0,
+
+                              PRIMARY KEY (cassette_cut_id),
+
+                              CONSTRAINT fk_cassette_cut_digitized_media
+                                  FOREIGN KEY (digitized_media_id)
+                                      REFERENCES digitized_media(digitized_media_id)
+                                      ON DELETE CASCADE,
+
+                              CONSTRAINT fk_cassette_cut_category
+                                  FOREIGN KEY (cassette_category_id)
+                                      REFERENCES cassette_category(cassette_category_id)
+);
+
+
+CREATE TABLE production (
+                            production_id BIGINT GENERATED ALWAYS AS IDENTITY,
+                            title TEXT NOT NULL,
+                            file_path TEXT NOT NULL,
+                            file_size_gb NUMERIC(12,2)
+                                CONSTRAINT chk_production_file_size_positive
+                                    CHECK (file_size_gb > 0),
+                            version BIGINT NOT NULL DEFAULT 0,
+
+                            PRIMARY KEY (production_id)
+);
+
 
 CREATE TABLE app_user (
                           user_id BIGINT GENERATED ALWAYS AS IDENTITY,
@@ -134,8 +200,9 @@ CREATE TABLE app_user (
                                   REFERENCES app_role(role_id)
 );
 
+
 -- =====================================================
--- MANY-TO-MANY TABLES (NO VERSION NEEDED)
+-- MANY-TO-MANY TABLES
 -- =====================================================
 
 CREATE TABLE news_cameraman (
@@ -154,6 +221,7 @@ CREATE TABLE news_cameraman (
                                         REFERENCES cameraman(cameraman_id)
 );
 
+
 CREATE TABLE news_reporter (
                                news_id BIGINT NOT NULL,
                                reporter_id BIGINT NOT NULL,
@@ -169,6 +237,7 @@ CREATE TABLE news_reporter (
                                    FOREIGN KEY (reporter_id)
                                        REFERENCES reporter(reporter_id)
 );
+
 
 CREATE TABLE news_location (
                                news_id BIGINT NOT NULL,
@@ -186,34 +255,70 @@ CREATE TABLE news_location (
                                        REFERENCES location(location_id)
 );
 
+
 CREATE TABLE photo_cameraman (
-                            photo_id BIGINT NOT NULL,
-                            cameraman_id BIGINT NOT NULL,
+                                 photo_id BIGINT NOT NULL,
+                                 cameraman_id BIGINT NOT NULL,
 
-                            PRIMARY KEY (photo_id, cameraman_id),
+                                 PRIMARY KEY (photo_id, cameraman_id),
 
-                            CONSTRAINT fk_photo_cameraman_photo
-                                FOREIGN KEY (photo_id)
-                                    REFERENCES photo(photo_id)
-                                    ON DELETE CASCADE,
+                                 CONSTRAINT fk_photo_cameraman_photo
+                                     FOREIGN KEY (photo_id)
+                                         REFERENCES photo(photo_id)
+                                         ON DELETE CASCADE,
 
-                            CONSTRAINT fk_photo_cameraman_cameraman
-                                FOREIGN KEY (cameraman_id)
-                                    REFERENCES cameraman(cameraman_id)
-
+                                 CONSTRAINT fk_photo_cameraman_cameraman
+                                     FOREIGN KEY (cameraman_id)
+                                         REFERENCES cameraman(cameraman_id)
 );
+
 
 -- =====================================================
 -- INDEXES
 -- =====================================================
 
-CREATE INDEX idx_news_reporter_reporter ON news_reporter(reporter_id);
-CREATE INDEX idx_news_cameraman_cameraman ON news_cameraman(cameraman_id);
-CREATE INDEX idx_news_location_location ON news_location(location_id);
-CREATE INDEX idx_news_date_desc ON news(news_date DESC);
-CREATE INDEX idx_news_imported_by ON news(imported_by);
-CREATE INDEX idx_news_ingested_by ON news(ingested_by);
-CREATE INDEX idx_app_user_role_id ON app_user(role_id);
+CREATE INDEX idx_news_reporter_reporter
+    ON news_reporter(reporter_id);
+
+CREATE INDEX idx_news_cameraman_cameraman
+    ON news_cameraman(cameraman_id);
+
+CREATE INDEX idx_news_location_location
+    ON news_location(location_id);
+
+CREATE INDEX idx_photo_cameraman_cameraman
+    ON photo_cameraman(cameraman_id);
+
+CREATE INDEX idx_news_date_desc
+    ON news(news_date DESC);
+
+CREATE INDEX idx_news_imported_by
+    ON news(imported_by);
+
+CREATE INDEX idx_news_ingested_by
+    ON news(ingested_by);
+
+CREATE INDEX idx_app_user_role_id
+    ON app_user(role_id);
+
+
+-- =====================================================
+-- CASSETTE CUT INDEXES
+-- =====================================================
+
+CREATE INDEX idx_cassette_cut_digitized_media_id
+    ON cassette_cut(digitized_media_id);
+
+CREATE INDEX idx_cassette_cut_category_id
+    ON cassette_cut(cassette_category_id);
+
+CREATE INDEX idx_cassette_cut_date
+    ON cassette_cut(cut_date);
+
+
+-- =====================================================
+-- FULL-TEXT SEARCH INDEXES
+-- =====================================================
 
 CREATE INDEX news_title_fts_idx
     ON news
@@ -223,8 +328,8 @@ CREATE INDEX photo_title_fts_idx
     ON photo
         USING gin (to_tsvector('simple', title));
 
-CREATE INDEX digitized_media_title_fts_idx
-    ON digitized_media
+CREATE INDEX cassette_cut_title_fts_idx
+    ON cassette_cut
         USING gin (to_tsvector('simple', title));
 
 CREATE INDEX production_title_fts_idx
