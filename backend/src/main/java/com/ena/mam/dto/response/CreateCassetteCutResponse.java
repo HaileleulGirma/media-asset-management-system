@@ -2,7 +2,7 @@ package com.ena.mam.dto.response;
 
 import java.time.LocalDate;
 
-public record CreateCassetteCutCategoryResponse(
+public record CreateCassetteCutResponse(
         Long CutId,
         String CutTitle,
         LocalDate cutDate,
