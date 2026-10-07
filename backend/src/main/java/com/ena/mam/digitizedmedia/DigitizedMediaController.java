@@ -53,6 +53,12 @@ public class DigitizedMediaController {
             Long importerId,
 
             @RequestParam(required = false)
+            Long categoryId,
+
+            @RequestParam(required = false)
+            Long identifierNumber,
+
+            @RequestParam(required = false)
             String searchTerm,
 
             Pageable pageable
@@ -60,6 +66,8 @@ public class DigitizedMediaController {
         DigitizedMediaFilter filter =
                 new DigitizedMediaFilter(
                         importerId,
+                        categoryId,
+                        identifierNumber,
                         searchTerm
                 );
 
