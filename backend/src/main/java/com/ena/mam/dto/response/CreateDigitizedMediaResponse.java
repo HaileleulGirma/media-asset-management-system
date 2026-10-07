@@ -1,9 +1,11 @@
 package com.ena.mam.dto.response;
 
 public record CreateDigitizedMediaResponse(
-        Long id,
+        Long digitizedMediaId,
         String title,
-        String path,
+        String filePath,
+        Long identifierCategoryId,
+        Long identifierNumber,
         Long importerId,
         Long version
 ) {
