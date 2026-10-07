@@ -1,9 +1,12 @@
 package com.ena.mam.photo;
 
+import com.ena.mam.cameraman.Cameraman;
 import com.ena.mam.staffmember.StaffMember;
 import jakarta.persistence.*;
 
-import java.util.Date;
+import java.time.LocalDate;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "photo")
@@ -15,6 +18,14 @@ public class Photo {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "photo_id")
     private Long photoId;
+
+    @ManyToMany
+    @JoinTable(
+            name = "photo_cameraman",
+            joinColumns = @JoinColumn(name = "photo_id"),
+            inverseJoinColumns = @JoinColumn(name = "cameraman_id")
+    )
+    private Set<Cameraman> cameramen = new HashSet<>();
 
     @Column(name = "title")
     private String title;
@@ -29,7 +40,7 @@ public class Photo {
     private Double fileSizeMb;
 
     @Column(name = "photo_date")
-    private Date photoDate;
+    private LocalDate photoDate;
 
     @ManyToOne
     @JoinColumn(name = "imported_by")
@@ -78,11 +89,11 @@ public class Photo {
         this.fileSizeMb = fileSizeMb;
     }
 
-    public Date getPhotoDate() {
+    public LocalDate getPhotoDate() {
         return photoDate;
     }
 
-    public void setPhotoDate(Date photoDate) {
+    public void setPhotoDate(LocalDate photoDate) {
         this.photoDate = photoDate;
     }
 
@@ -100,5 +111,13 @@ public class Photo {
 
     public void setVersion(Long version) {
         this.version = version;
+    }
+
+    public Set<Cameraman> getCameramen() {
+        return cameramen;
+    }
+
+    public void setCameramen(Set<Cameraman> cameramen) {
+        this.cameramen = cameramen;
     }
 }
