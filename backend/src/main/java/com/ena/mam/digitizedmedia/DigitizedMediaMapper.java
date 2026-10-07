@@ -11,7 +11,6 @@ public class DigitizedMediaMapper {
     public DigitizedMedia toDigitizedMedia(CreateDigitizedMediaRequest request, StaffMember staffMember, CassetteCategory cassetteCategory){
         DigitizedMedia digitizedMedia = new DigitizedMedia();
 
-        digitizedMedia.setTitle(request.title());
         digitizedMedia.setFilePath(request.filePath());
         digitizedMedia.setCassetteCategory(cassetteCategory);
         digitizedMedia.setIdentifierNumber(request.identifierNumber());
@@ -23,7 +22,6 @@ public class DigitizedMediaMapper {
     public CreateDigitizedMediaResponse toResponse(DigitizedMedia digitizedMedia){
         return new CreateDigitizedMediaResponse(
                 digitizedMedia.getDigitizedMediaId(),
-                digitizedMedia.getTitle(),
                 digitizedMedia.getFilePath(),
                 digitizedMedia.getCassetteCategory().getCategoryId(),
                 digitizedMedia.getIdentifierNumber(),
@@ -32,7 +30,6 @@ public class DigitizedMediaMapper {
     }
 
     public void updateDigitizedMedia(DigitizedMedia digitizedMedia, CreateDigitizedMediaRequest request, StaffMember staffMember, CassetteCategory cassetteCategory){
-        digitizedMedia.setTitle(request.title());
         digitizedMedia.setFilePath(request.filePath());
         digitizedMedia.setCassetteCategory(cassetteCategory);
         digitizedMedia.setIdentifierNumber(request.identifierNumber());

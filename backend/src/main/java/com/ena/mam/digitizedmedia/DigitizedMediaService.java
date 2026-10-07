@@ -140,14 +140,6 @@ public class DigitizedMediaService {
             );
         }
 
-        if (filter.searchTerm() != null && !filter.searchTerm().isBlank()) {
-            spec = spec.and(
-                    DigitizedMediaSpecification.hasSearchTerm(
-                            filter.searchTerm()
-                    )
-            );
-        }
-
         Pageable sortedPageable = PageRequest.of(
                 pageable.getPageNumber(),
                 pageable.getPageSize(),

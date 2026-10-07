@@ -27,9 +27,6 @@ public class DigitizedMedia {
     @Column(name = "digitized_media_id")
     private Long digitizedMediaId;
 
-    @Column(name = "title")
-    private String title;
-
     @Column(name = "file_path")
     private String filePath;
 
@@ -55,14 +52,6 @@ public class DigitizedMedia {
 
     public void setDigitizedMediaId(Long digitizedMediaId) {
         this.digitizedMediaId = digitizedMediaId;
-    }
-
-    public String getTitle() {
-        return title;
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
     }
 
     public String getFilePath() {

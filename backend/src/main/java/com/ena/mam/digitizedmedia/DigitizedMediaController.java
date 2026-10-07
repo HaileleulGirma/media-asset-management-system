@@ -58,17 +58,13 @@ public class DigitizedMediaController {
             @RequestParam(required = false)
             Long identifierNumber,
 
-            @RequestParam(required = false)
-            String searchTerm,
-
             Pageable pageable
     ) {
         DigitizedMediaFilter filter =
                 new DigitizedMediaFilter(
                         importerId,
                         categoryId,
-                        identifierNumber,
-                        searchTerm
+                        identifierNumber
                 );
 
         return digitizedMediaService.search(
