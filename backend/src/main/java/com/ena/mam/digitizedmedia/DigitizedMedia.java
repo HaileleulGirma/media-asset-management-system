@@ -5,7 +5,18 @@ import com.ena.mam.staffmember.StaffMember;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "digitized_media")
+@Table(
+        name = "digitized_media",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_digitized_media_category_identifier",
+                        columnNames = {
+                                "identifier_category_id",
+                                "identifier_number"
+                        }
+                )
+        }
+)
 public class DigitizedMedia {
 
     public DigitizedMedia() {
@@ -22,17 +33,13 @@ public class DigitizedMedia {
     @Column(name = "file_path")
     private String filePath;
 
-    public CassetteCategory getCassetteCategory() {
-        return cassetteCategory;
-    }
-
-    public void setCassetteCategory(CassetteCategory cassetteCategory) {
-        this.cassetteCategory = cassetteCategory;
-    }
-
     @ManyToOne
-    @JoinColumn(name = "category_id")
+    @JoinColumn(name = "identifier_category_id")
     private CassetteCategory cassetteCategory;
+
+    @Column(name = "identifier_number")
+    private Long identifierNumber;
+
 
     @ManyToOne
     @JoinColumn(name = "imported_by")
@@ -74,11 +81,27 @@ public class DigitizedMedia {
         this.importer = importer;
     }
 
+    public CassetteCategory getCassetteCategory() {
+        return cassetteCategory;
+    }
+
+    public void setCassetteCategory(CassetteCategory cassetteCategory) {
+        this.cassetteCategory = cassetteCategory;
+    }
+
     public Long getVersion() {
         return version;
     }
 
     public void setVersion(Long version) {
         this.version = version;
+    }
+
+    public Long getIdentifierNumber() {
+        return identifierNumber;
+    }
+
+    public void setIdentifierNumber(Long identifierNumber) {
+        this.identifierNumber = identifierNumber;
     }
 }
