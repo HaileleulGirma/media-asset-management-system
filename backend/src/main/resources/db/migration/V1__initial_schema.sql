@@ -65,7 +65,7 @@ CREATE TABLE news (
                       news_date DATE NOT NULL,
                       file_path TEXT NOT NULL,
 
-                      imported_by BIGINT NOT NULL,
+                      imported_by BIGINT,
                       ingested_by BIGINT,
                       version BIGINT NOT NULL DEFAULT 0,
 
