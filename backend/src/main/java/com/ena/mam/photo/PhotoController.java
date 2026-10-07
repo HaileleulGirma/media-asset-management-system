@@ -48,9 +48,15 @@ public class PhotoController {
         return ResponseEntity.noContent().build();
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'VIEWER')")
     @GetMapping("/api/photos")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'VIEWER')")
     public Page<CreatePhotoResponse> search(
+            @RequestParam(required = false)
+            Long importerId,
+
+            @RequestParam(required = false)
+            Long cameramanId,
+
             @RequestParam(required = false)
             LocalDate startDate,
 
@@ -60,23 +66,16 @@ public class PhotoController {
             @RequestParam(required = false)
             String searchTerm,
 
-            @RequestParam(required = false)
-            Long importerId,
-
             Pageable pageable
     ) {
-
-        PhotoFilter filter =
-                new PhotoFilter(
-                        startDate,
-                        endDate,
-                        searchTerm,
-                        importerId
-                );
-
-        return photoService.search(
-                filter,
-                pageable
+        PhotoFilter filter = new PhotoFilter(
+                importerId,
+                cameramanId,
+                startDate,
+                endDate,
+                searchTerm
         );
+
+        return photoService.search(filter, pageable);
     }
 }
