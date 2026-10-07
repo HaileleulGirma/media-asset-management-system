@@ -142,7 +142,7 @@ public class PhotoService {
             spec = spec.and(
                     PhotoSpecification.hasPhotoDateBetween(
                             filter.startDate(),
-                            filter.endDate()
+                            filter.effectiveEndDate()
                     )
             );
         }
