@@ -8,7 +8,6 @@ import com.ena.mam.dto.request.CreateCassetteCutRequest;
 import com.ena.mam.dto.request.filter.CassetteCutFilter;
 import com.ena.mam.dto.response.CreateCassetteCutResponse;
 import com.ena.mam.exception.ResourceNotFoundException;
-import com.ena.mam.staffmember.StaffMemberRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -22,14 +21,12 @@ public class CassetteCutService {
     private final CassetteCutRepository cassetteCutRepository;
     private final CassetteCutMapper cassetteCutMapper;
     private final CassetteCategoryRepository cassetteCategoryRepository;
-    private final StaffMemberRepository staffMemberRepository;
     private final DigitizedMediaRepository digitizedMediaRepository;
 
-    public CassetteCutService(CassetteCutRepository cassetteCutRepository, CassetteCutMapper cassetteCutMapper, CassetteCategoryRepository cassetteCategoryRepository, StaffMemberRepository staffMemberRepository, DigitizedMediaRepository digitizedMediaRepository) {
+    public CassetteCutService(CassetteCutRepository cassetteCutRepository, CassetteCutMapper cassetteCutMapper, CassetteCategoryRepository cassetteCategoryRepository, DigitizedMediaRepository digitizedMediaRepository) {
         this.cassetteCutRepository = cassetteCutRepository;
         this.cassetteCutMapper = cassetteCutMapper;
         this.cassetteCategoryRepository = cassetteCategoryRepository;
-        this.staffMemberRepository = staffMemberRepository;
         this.digitizedMediaRepository = digitizedMediaRepository;
     }
 
@@ -38,14 +35,14 @@ public class CassetteCutService {
 
         DigitizedMedia digitizedMedia = digitizedMediaRepository
                 .findById(request.digitizedMediaId())
-                .orElseThrow(() ->new ResourceNotFoundException("Digitized Media not found: "+ request.digitizedMediaId()
+                .orElseThrow(() ->new ResourceNotFoundException("Digitized Media not found: " + request.digitizedMediaId()
                         )
                 );
 
         CassetteCategory cassetteCategory = cassetteCategoryRepository
                 .findById(request.cassetteCategoryId())
                 .orElseThrow(() ->
-                        new ResourceNotFoundException("Cassette category not found: "+ request.cassetteCategoryId()
+                        new ResourceNotFoundException("Cassette category not found: " + request.cassetteCategoryId()
                         )
                 );
 
@@ -91,18 +88,14 @@ public class CassetteCutService {
         DigitizedMedia digitizedMedia = digitizedMediaRepository
                 .findById(request.digitizedMediaId())
                 .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Digitized Media not found: "
-                                        + request.digitizedMediaId()
+                        new ResourceNotFoundException("Digitized Media not found: " + request.digitizedMediaId()
                         )
                 );
 
         CassetteCategory cassetteCategory = cassetteCategoryRepository
                 .findById(request.cassetteCategoryId())
                 .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Cassette category not found: "
-                                        + request.cassetteCategoryId()
+                        new ResourceNotFoundException("Cassette category not found: " + request.cassetteCategoryId()
                         )
                 );
 
