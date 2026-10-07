@@ -1,14 +1,16 @@
 package com.ena.mam.cassettecut;
 
+import com.ena.mam.cassettecategory.CassetteCategory;
+import com.ena.mam.digitizedmedia.DigitizedMedia;
 import jakarta.persistence.*;
 
 import java.time.LocalDate;
 
 @Entity
 @Table(name = "cassette_cut")
-public class CasseteCut {
+public class CassetteCut {
 
-    public CasseteCut() {
+    public CassetteCut() {
     }
 
     @Id
@@ -24,11 +26,11 @@ public class CasseteCut {
 
     @ManyToOne
     @JoinColumn(name = "digitized_media_id")
-    private Long digitizedMediaId;
+    private DigitizedMedia digitizedMedia;
 
     @ManyToOne
     @JoinColumn(name = "cassette_category_id")
-    private Long cassetteCategoryId;
+    private CassetteCategory cassetteCategory;
 
     @Version
     @Column(name = "version")
@@ -58,20 +60,21 @@ public class CasseteCut {
         this.cutDate = cutDate;
     }
 
-    public Long getDigitizedMediaId() {
-        return digitizedMediaId;
+
+    public DigitizedMedia getDigitizedMedia() {
+        return digitizedMedia;
     }
 
-    public void setDigitizedMediaId(Long digitizedMediaId) {
-        this.digitizedMediaId = digitizedMediaId;
+    public void setDigitizedMedia(DigitizedMedia digitizedMedia) {
+        this.digitizedMedia = digitizedMedia;
     }
 
-    public Long getCassetteCategoryId() {
-        return cassetteCategoryId;
+    public CassetteCategory getCassetteCategory() {
+        return cassetteCategory;
     }
 
-    public void setCassetteCategoryId(Long cassetteCategoryId) {
-        this.cassetteCategoryId = cassetteCategoryId;
+    public void setCassetteCategory(CassetteCategory cassetteCategory) {
+        this.cassetteCategory = cassetteCategory;
     }
 
     public Long getVersion() {
