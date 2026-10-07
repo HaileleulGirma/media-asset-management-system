@@ -1,12 +1,17 @@
 package com.ena.mam.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
 import java.time.LocalDate;
+import java.util.Set;
 
 public record CreatePhotoRequest(
+        @NotEmpty(message = "At least one cameraman is required.")
+        Set<Long> cameramanIds,
+
         @NotBlank(message = "Title is required")
         String title,
 
