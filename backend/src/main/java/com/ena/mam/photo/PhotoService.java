@@ -1,5 +1,7 @@
 package com.ena.mam.photo;
 
+import com.ena.mam.cameraman.Cameraman;
+import com.ena.mam.cameraman.CameramanRepository;
 import com.ena.mam.dto.request.CreatePhotoRequest;
 import com.ena.mam.dto.request.filter.PhotoFilter;
 import com.ena.mam.dto.response.CreatePhotoResponse;
@@ -15,35 +17,43 @@ import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
+import java.util.Set;
+
 @Service
 public class PhotoService {
 
     private final StaffMemberRepository staffMemberRepository;
     private final PhotoMapper photoMapper;
     private final PhotoRepository photoRepository;
+    private final CameramanRepository cameramanRepository;
 
     public PhotoService(
             StaffMemberRepository staffMemberRepository,
             PhotoMapper photoMapper,
-            PhotoRepository photoRepository
+            PhotoRepository photoRepository,
+            CameramanRepository cameramanRepository
     ) {
         this.staffMemberRepository = staffMemberRepository;
         this.photoMapper = photoMapper;
         this.photoRepository = photoRepository;
+        this.cameramanRepository = cameramanRepository;
     }
 
     @Transactional
     public CreatePhotoResponse create(CreatePhotoRequest request) {
 
+        Set<Cameraman> cameramen =
+                new HashSet<>(cameramanRepository.findAllById(request.cameramanIds()));
+
         StaffMember staffMember = staffMemberRepository
                 .findById(request.importedBy())
                 .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Importer not found: " + request.importedBy()
+                        new ResourceNotFoundException("Importer not found: " + request.importedBy()
                         )
                 );
 
-        Photo photo = photoMapper.toPhoto(request, staffMember);
+        Photo photo = photoMapper.toPhoto(request, staffMember, cameramen);
 
         Photo savedPhoto = photoRepository.save(photo);
 
@@ -71,7 +81,7 @@ public class PhotoService {
                         )
                 );
 
-        if (request.version() != photo.getVersion()) {
+        if (!request.version().equals(photo.getVersion())) {
             throw new ObjectOptimisticLockingFailureException(
                     Photo.class,
                     photoId
@@ -81,15 +91,18 @@ public class PhotoService {
         StaffMember staffMember = staffMemberRepository
                 .findById(request.importedBy())
                 .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Importer not found: " + request.importedBy()
+                        new ResourceNotFoundException("Importer not found: " + request.importedBy()
                         )
                 );
+
+        Set<Cameraman> cameramen =
+                new HashSet<>(cameramanRepository.findAllById(request.cameramanIds()));
 
         photoMapper.updatePhoto(
                 photo,
                 request,
-                staffMember
+                staffMember,
+                cameramen
         );
 
         Photo savedPhoto = photoRepository.save(photo);
@@ -105,24 +118,31 @@ public class PhotoService {
     @Transactional(readOnly = true)
     public Page<CreatePhotoResponse> search(
             PhotoFilter filter,
-            Pageable pageable
-    ) {
+            Pageable pageable) {
 
         Specification<Photo> spec = Specification.allOf();
-
-        if (filter.startDate() != null) {
-            spec = spec.and(
-                    PhotoSpecification.hasPhotoDateBetween(
-                            filter.startDate(),
-                            filter.effectiveEndDate()
-                    )
-            );
-        }
 
         if (filter.importerId() != null) {
             spec = spec.and(
                     PhotoSpecification.hasImporterId(
                             filter.importerId()
+                    )
+            );
+        }
+
+        if (filter.cameramanId() != null) {
+            spec = spec.and(
+                    PhotoSpecification.hasCameramanId(
+                            filter.cameramanId()
+                    )
+            );
+        }
+
+        if (filter.startDate() != null && filter.endDate() != null) {
+            spec = spec.and(
+                    PhotoSpecification.hasPhotoDateBetween(
+                            filter.startDate(),
+                            filter.endDate()
                     )
             );
         }
@@ -138,7 +158,7 @@ public class PhotoService {
         Pageable sortedPageable = PageRequest.of(
                 pageable.getPageNumber(),
                 pageable.getPageSize(),
-                Sort.by("photoDate").descending()
+                Sort.by("photoId").descending()
         );
 
         return photoRepository
