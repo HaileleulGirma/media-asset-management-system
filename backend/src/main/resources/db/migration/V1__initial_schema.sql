@@ -156,7 +156,7 @@ CREATE TABLE cassette_cut (
                               digitized_media_id BIGINT NOT NULL,
                               cassette_category_id BIGINT NOT NULL,
 
-                              title TEXT NOT NULL,
+                              cut_title TEXT NOT NULL,
                               cut_date DATE,
                               version BIGINT NOT NULL DEFAULT 0,
 
@@ -330,7 +330,7 @@ CREATE INDEX photo_title_fts_idx
 
 CREATE INDEX cassette_cut_title_fts_idx
     ON cassette_cut
-        USING gin (to_tsvector('simple', title));
+        USING gin (to_tsvector('simple', cut_title));
 
 CREATE INDEX production_title_fts_idx
     ON production
