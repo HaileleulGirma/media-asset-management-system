@@ -8,13 +8,16 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class CassetteCutMapper {
-    public CassetteCut toCassetteCut(CreateCassetteCutRequest request, DigitizedMedia digitizedMedia, CassetteCategory cassetteCategory){
+    public CassetteCut toCassetteCut(
+            CreateCassetteCutRequest request,
+            DigitizedMedia digitizedMedia,
+            CassetteCategory cassetteCategory){
 
         CassetteCut cassetteCut = new CassetteCut();
 
         cassetteCut.setCassetteCategory(cassetteCategory);
         cassetteCut.setCutDate(request.cutDate());
-        cassetteCut.setCutTitle(request.CutTitle());
+        cassetteCut.setCutTitle(request.cutTitle());
         cassetteCut.setVersion(request.version());
         cassetteCut.setDigitizedMedia(digitizedMedia);
 
@@ -29,5 +32,16 @@ public class CassetteCutMapper {
                 cassetteCut.getDigitizedMedia().getDigitizedMediaId(),
                 cassetteCut.getCassetteCategory().getCategoryId(),
                 cassetteCut.getVersion());
+    }
+
+    public void updateCassetteCut(CassetteCut cassetteCut,
+                          CreateCassetteCutRequest request,
+                          DigitizedMedia digitizedMedia,
+                          CassetteCategory cassetteCategory){
+
+        cassetteCut.setCutTitle(request.cutTitle());
+        cassetteCut.setCutDate(request.cutDate());
+        cassetteCut.setDigitizedMedia(digitizedMedia);
+        cassetteCut.setCassetteCategory(cassetteCategory);
     }
 }
