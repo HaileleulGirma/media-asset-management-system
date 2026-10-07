@@ -1,31 +1,33 @@
 package com.ena.mam.cassettecut;
 
+import com.ena.mam.cassettecategory.CassetteCategory;
+import com.ena.mam.digitizedmedia.DigitizedMedia;
 import com.ena.mam.dto.request.CreateCassetteCutRequest;
 import com.ena.mam.dto.response.CreateCassetteCutResponse;
 import org.springframework.stereotype.Component;
 
 @Component
 public class CassetteCutMapper {
-    public CasseteCut toCassetteCut(CreateCassetteCutRequest request){
+    public CassetteCut toCassetteCut(CreateCassetteCutRequest request, DigitizedMedia digitizedMedia, CassetteCategory cassetteCategory){
 
-        CasseteCut casseteCut = new CasseteCut();
+        CassetteCut cassetteCut = new CassetteCut();
 
-        casseteCut.setCassetteCategoryId(request.CassetteCategoryId());
-        casseteCut.setCutDate(request.cutDate());
-        casseteCut.setCutTitle(request.CutTitle());
-        casseteCut.setVersion(request.version());
-        casseteCut.setDigitizedMediaId(request.digitizedMediaId());
+        cassetteCut.setCassetteCategory(cassetteCategory);
+        cassetteCut.setCutDate(request.cutDate());
+        cassetteCut.setCutTitle(request.CutTitle());
+        cassetteCut.setVersion(request.version());
+        cassetteCut.setDigitizedMedia(digitizedMedia);
 
-        return casseteCut;
+        return cassetteCut;
     }
 
-    public CreateCassetteCutResponse toResponse(CasseteCut casseteCut){
+    public CreateCassetteCutResponse toResponse(CassetteCut cassetteCut){
         return new CreateCassetteCutResponse(
-                casseteCut.getCutId(),
-                casseteCut.getCutTitle(),
-                casseteCut.getCutDate(),
-                casseteCut.getDigitizedMediaId(),
-                casseteCut.getCassetteCategoryId(),
-                casseteCut.getVersion());
+                cassetteCut.getCutId(),
+                cassetteCut.getCutTitle(),
+                cassetteCut.getCutDate(),
+                cassetteCut.getDigitizedMedia().getDigitizedMediaId(),
+                cassetteCut.getCassetteCategory().getCategoryId(),
+                cassetteCut.getVersion());
     }
 }
