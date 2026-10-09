@@ -5,6 +5,7 @@ import com.ena.mam.dto.response.CreateStaffMemberResponse;
 import com.ena.mam.exception.DuplicateResourceException;
 import com.ena.mam.exception.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -18,6 +19,7 @@ public class StaffMemberService {
         this.staffMemberMapper = staffMemberMapper;
     }
 
+    @Transactional
     public CreateStaffMemberResponse create(CreateStaffMemberRequest request){
         if (staffMemberRepository.existsByStaffMemberNameIgnoreCase(request.staffMemberName())) {
             throw new DuplicateResourceException(
@@ -28,6 +30,7 @@ public class StaffMemberService {
         return staffMemberMapper.toResponse(savedStaffMember);
     }
 
+    @Transactional
     public CreateStaffMemberResponse update(Long id, CreateStaffMemberRequest request){
         StaffMember staffMember = staffMemberRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Staff Member with id %d not found.".formatted(id)));
@@ -43,15 +46,18 @@ public class StaffMemberService {
         return staffMemberMapper.toResponse(savedStaffMember);
     }
 
+    @Transactional
     public void delete(Long id){
         staffMemberRepository.deleteById(id);
     }
 
+    @Transactional(readOnly = true)
     public CreateStaffMemberResponse findById(Long id){
         StaffMember staffMember = staffMemberRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Staff Member with id %d not found.".formatted(id)));
         return staffMemberMapper.toResponse(staffMember);
     }
 
+    @Transactional(readOnly = true)
     public List<CreateStaffMemberResponse> findAll(Boolean activeOnly){
         List<StaffMember> staffMembers = (activeOnly != null && activeOnly)
                 ? staffMemberRepository.findByIsActiveTrue()
