@@ -5,6 +5,7 @@ import com.ena.mam.dto.response.CreateLocationResponse;
 import com.ena.mam.exception.DuplicateResourceException;
 import com.ena.mam.exception.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -18,6 +19,7 @@ public class LocationService {
         this.locationRepository = locationRepository;
     }
 
+    @Transactional
     public CreateLocationResponse create(CreateLocationRequest request){
         if (locationRepository.existsByLocationNameIgnoreCase(request.locationName())) {
             throw new DuplicateResourceException(
@@ -28,6 +30,7 @@ public class LocationService {
         return locationMapper.toResponse(savedLocation);
     }
 
+    @Transactional
     public CreateLocationResponse update(Long id, CreateLocationRequest request){
         Location location = locationRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Location with id %d not found.".formatted(id)));
@@ -43,6 +46,7 @@ public class LocationService {
         return locationMapper.toResponse(savedLocation);
     }
 
+    @Transactional
     public void delete(Long id){
         locationRepository.deleteById(id);
     }
@@ -52,6 +56,7 @@ public class LocationService {
         return locationMapper.toResponse(location);
     }
 
+    @Transactional(readOnly = true)
     public List<CreateLocationResponse> findAll(Boolean abroadOnly){
         List<Location> locations = (abroadOnly != null && abroadOnly)
                 ? locationRepository.findByIsAbroadTrue()
