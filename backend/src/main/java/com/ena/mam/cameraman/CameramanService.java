@@ -5,6 +5,7 @@ import com.ena.mam.dto.response.CreateCameramanResponse;
 import com.ena.mam.exception.DuplicateResourceException;
 import com.ena.mam.exception.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -18,6 +19,7 @@ public class CameramanService {
         this.cameramanMapper = cameramanMapper;
     }
 
+    @Transactional
     public CreateCameramanResponse create(CreateCameramanRequest request){
         if (cameramanRepository.existsByCameramanNameIgnoreCase(request.cameramanName())) {
             throw new DuplicateResourceException(
@@ -28,6 +30,7 @@ public class CameramanService {
         return cameramanMapper.toResponse(savedCameraman);
     }
 
+    @Transactional
     public CreateCameramanResponse update(Long cameramanId, CreateCameramanRequest request){
         Cameraman cameraman = cameramanRepository.findById(cameramanId)
                 .orElseThrow(() -> new ResourceNotFoundException("Cameraman with id %d not found.".formatted(cameramanId)));
@@ -43,10 +46,12 @@ public class CameramanService {
         return cameramanMapper.toResponse(savedCameraman);
     }
 
+    @Transactional
     public void delete(Long cameramanId){
         cameramanRepository.deleteById(cameramanId);
     }
 
+    @Transactional(readOnly = true)
     public CreateCameramanResponse findById(Long cameramanId){
         Cameraman cameraman = cameramanRepository.findById(cameramanId).orElseThrow(() -> new ResourceNotFoundException("Cameraman with id %d not found.".formatted(cameramanId)));
         return cameramanMapper.toResponse(cameraman);
