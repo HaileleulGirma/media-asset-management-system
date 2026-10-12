@@ -64,6 +64,7 @@ CREATE TABLE news (
                               CHECK (total_size_gb > 0),
                       news_date DATE NOT NULL,
                       file_path TEXT NOT NULL,
+                      private BOOLEAN NOT NULL DEFAULT FALSE,
 
                       imported_by BIGINT,
                       ingested_by BIGINT,
@@ -92,6 +93,7 @@ CREATE TABLE photo (
                            CONSTRAINT chk_photo_file_size_positive
                                CHECK (file_size_mb > 0),
                        photo_date DATE NOT NULL,
+                       private BOOLEAN NOT NULL DEFAULT FALSE,
 
                        imported_by BIGINT NOT NULL,
                        version BIGINT NOT NULL DEFAULT 0,
@@ -120,6 +122,7 @@ CREATE TABLE digitized_media (
                                  identifier_number INTEGER NOT NULL,
 
                                  file_path TEXT NOT NULL,
+                                 private BOOLEAN NOT NULL DEFAULT FALSE,
 
                                  imported_by BIGINT NOT NULL,
                                  version BIGINT NOT NULL DEFAULT 0,
