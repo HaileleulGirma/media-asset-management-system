@@ -4,6 +4,7 @@ import com.ena.mam.dto.request.CreateCassetteCategoryRequest;
 import com.ena.mam.dto.response.CreateCassetteCategoryResponse;
 import com.ena.mam.exception.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -17,6 +18,7 @@ public class CassetteCategoryService {
         this.cassetteCategoryMapper = cassetteCategoryMapper;
     }
 
+    @Transactional
     public CreateCassetteCategoryResponse create(CreateCassetteCategoryRequest request){
 
         CassetteCategory cassetteCategory = cassetteCategoryMapper.toCassette(request);
@@ -25,6 +27,7 @@ public class CassetteCategoryService {
         return cassetteCategoryMapper.toResponse(savedCassetteCategory);
     }
 
+    @Transactional
     public CreateCassetteCategoryResponse update(Long categoryId, CreateCassetteCategoryRequest request){
         if (request.version() == null){
             throw new IllegalArgumentException("Version number is required when updating cassette category.");
@@ -46,8 +49,10 @@ public class CassetteCategoryService {
         return cassetteCategoryMapper.toResponse(savedCassetteCategory);
     }
 
+    @Transactional
     public void delete(Long categoryId){categoryRepository.deleteById(categoryId);}
 
+    @Transactional(readOnly = true)
     public List<CreateCassetteCategoryResponse> findAll(){
         List<CassetteCategory> cassetteCategories = categoryRepository.findAll();
 
