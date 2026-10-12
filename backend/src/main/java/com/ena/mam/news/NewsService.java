@@ -17,6 +17,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -47,6 +49,21 @@ public class NewsService {
         this.newsMapper = newsMapper;
         this.staffMemberRepository = staffMemberRepository;
         this.locationRepository = locationRepository;
+    }
+
+    private boolean canViewPrivateNews() {
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return false;
+        }
+
+        return authentication.getAuthorities().stream()
+                .anyMatch(authority ->
+                        authority.getAuthority().equals("ROLE_ADMIN")
+                                || authority.getAuthority().equals("ROLE_STAFF")
+                );
     }
 
     @Transactional
@@ -130,6 +147,18 @@ public class NewsService {
     public Page<CreateNewsResponse> search(NewsFilter filter, Pageable pageable) {
 
         Specification<News> spec = Specification.allOf();
+
+        boolean canViewPrivate = canViewPrivateNews();
+
+        // Viewers cannot search private news.
+        if (!canViewPrivate) {
+            spec = spec.and(NewsSpecification.isPublic());
+        } else if (filter.isPrivate() != null) {
+            // Staff and admins can request either privacy status.
+            spec = spec.and(
+                    NewsSpecification.hasPrivacyStatus(filter.isPrivate())
+            );
+        }
 
         // Loop through each reporter ID to enforce an "AND" condition
         if (filter.reporterIds() != null && !filter.reporterIds().isEmpty()) {
