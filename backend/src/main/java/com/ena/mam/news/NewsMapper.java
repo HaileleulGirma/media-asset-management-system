@@ -27,6 +27,7 @@ public class NewsMapper {
         news.setCameramen(cameramen);
         news.setReporters(reporters);
         news.setFilePath(request.filePath());
+        news.setPrivate(request.isPrivate());
         news.setImporter(importer);
         news.setIngestor(ingestor);
         news.setLocations(location);
@@ -45,6 +46,7 @@ public class NewsMapper {
                 news.getTitle(),
                 news.getLocations().stream().map(Location::getLocationId).collect(Collectors.toSet()),
                 news.getFilePath(),
+                news.getPrivate(),
                 news.getImporter().getStaffMemberId(),
                 news.getIngestor() != null ? news.getIngestor().getStaffMemberId() : null,
                 news.getNumberOfFiles(),
@@ -66,6 +68,7 @@ public class NewsMapper {
         news.setTitle(request.title());
         news.setNewsDate(request.newsDate());
         news.setFilePath(request.filePath());
+        news.setPrivate(request.isPrivate());
         news.setNumberOfFiles(request.numberOfFiles());
         news.setTotalSize(request.totalSize());
 
