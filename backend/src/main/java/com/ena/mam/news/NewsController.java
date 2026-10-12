@@ -71,6 +71,9 @@ public class NewsController {
             @RequestParam(required = false)
             Long ingestorId,
 
+            @RequestParam(required = false)
+            Boolean isPrivate,
+
             Pageable pageable
     ) {
 
@@ -83,7 +86,8 @@ public class NewsController {
                         endDate,
                         searchTerm,
                         importerId,
-                        ingestorId
+                        ingestorId,
+                        isPrivate
                 );
 
         return newsService.search(
