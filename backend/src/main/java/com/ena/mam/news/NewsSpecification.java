@@ -52,6 +52,15 @@ public class NewsSpecification {
     public static Specification<News> hasIngestorId(Long ingestorId) {
         return (root, query, cb) -> cb.equal(root.get("ingestor").get("staffMemberId"), ingestorId);
     }
+    public static Specification<News> isPublic() {
+        return (root, query, cb) ->
+                cb.isFalse(root.get("isPrivate"));
+    }
+    public static Specification<News> hasPrivacyStatus(boolean isPrivate) {
+        return (root, query, cb) ->
+                cb.equal(root.get("isPrivate"), isPrivate);
+    }
+
     public static Specification<News> hasSearchTerm(String searchTerm) {
         return (root, query, cb) ->
                 cb.isTrue(
