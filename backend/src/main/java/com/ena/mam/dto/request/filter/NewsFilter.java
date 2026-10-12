@@ -11,7 +11,8 @@ public record NewsFilter(
         LocalDate endDate,
         String searchTerm,
         Long importerId,
-        Long ingestorId
+        Long ingestorId,
+        Boolean isPrivate
 ) {
     public LocalDate effectiveEndDate() {
         return (endDate != null) ? endDate : startDate;}
