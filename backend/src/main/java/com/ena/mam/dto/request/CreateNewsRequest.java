@@ -17,6 +17,7 @@ public record CreateNewsRequest(
         Set<Long> reporterIds,
         @NotBlank(message = "File path cannot be blank.")
         String filePath,
+        Boolean isPrivate,
         @NotNull(message = "Importer is required.")
         Long importerId,
         Long ingestorId,

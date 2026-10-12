@@ -18,6 +18,8 @@ public record CreateNewsResponse(
 
         String filePath,
 
+        Boolean isPrivate,
+
         Long importerId,
 
         Long ingestorId,
