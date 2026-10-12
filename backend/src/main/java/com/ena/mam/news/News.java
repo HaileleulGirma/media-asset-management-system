@@ -28,6 +28,9 @@ public class News {
     @Column(name = "file_path")
     private String filePath;
 
+    @Column(name = "private")
+    private Boolean isPrivate;
+
     @Column(name = "number_of_files")
     private Integer numberOfFiles;
 
@@ -162,5 +165,13 @@ public class News {
 
     public void setFilePath(String filePath) {
         this.filePath = filePath;
+    }
+
+    public Boolean getPrivate() {
+        return isPrivate;
+    }
+
+    public void setPrivate(Boolean aPrivate) {
+        isPrivate = aPrivate;
     }
 }
