@@ -3,6 +3,7 @@ package com.ena.mam.production;
 import jakarta.persistence.*;
 
 @Entity
+@Table(name = "production")
 public class Production {
     public Production() {
     }
@@ -19,7 +20,7 @@ public class Production {
     private String filePath;
 
     @Column(name = "file_size_gb")
-    private Integer numberOfFiles;
+    private Double fileSizeGb;
 
     @Column(name = "version")
     private Long version;
@@ -48,12 +49,12 @@ public class Production {
         this.filePath = filePath;
     }
 
-    public Integer getNumberOfFiles() {
-        return numberOfFiles;
+    public Double getFileSizeGb() {
+        return fileSizeGb;
     }
 
-    public void setNumberOfFiles(Integer numberOfFiles) {
-        this.numberOfFiles = numberOfFiles;
+    public void setFileSizeGb(Double fileSizeGb) {
+        this.fileSizeGb = fileSizeGb;
     }
 
     public Long getVersion() {
