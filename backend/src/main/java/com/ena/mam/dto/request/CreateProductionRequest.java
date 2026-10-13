@@ -13,6 +13,7 @@ public record CreateProductionRequest(
 
         @NotNull(message = "File size is required")
         @Positive(message = "File size must be greater than zero")
-        Double fileSizeGb
+        Double fileSizeGb,
+        Long version
 ) {
 }
