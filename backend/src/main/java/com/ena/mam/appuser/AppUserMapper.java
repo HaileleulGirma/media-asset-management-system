@@ -7,6 +7,8 @@ import com.ena.mam.dto.response.CreateAppUserResponse;
 import com.ena.mam.exception.ResourceNotFoundException;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDate;
+
 @Component
 public class AppUserMapper {
 
@@ -16,15 +18,16 @@ public class AppUserMapper {
         this.appRoleRepository = appRoleRepository;
     }
 
-    public AppUser toAppUser(CreateAppUserRequest request) {
+    public AppUser toAppUser(CreateAppUserRequest request, LocalDate lastChanged) {
         AppRole role = appRoleRepository.findById(request.role())
                 .orElseThrow(() -> new ResourceNotFoundException("Role not found: " + request.role()));
 
         AppUser appUser = new AppUser();
         appUser.setUsername(request.username());
-        appUser.setFullName(request.fullName()); // 🐛 BUG 2 FIXED
+        appUser.setFullName(request.fullName());
         appUser.setPassword(request.password());
         appUser.setRole(role);
+        appUser.setLastChanged(lastChanged);
 
         return appUser;
     }
@@ -34,7 +37,8 @@ public class AppUserMapper {
                 appUser.getUserId(),
                 appUser.getUsername(),
                 appUser.getFullName(),
-                appUser.getRole().getRoleId()
+                appUser.getRole().getRoleId(),
+                appUser.getLastChanged()
         );
     }
 }
