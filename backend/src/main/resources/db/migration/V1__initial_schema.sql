@@ -178,11 +178,13 @@ CREATE TABLE cassette_cut (
 
 CREATE TABLE production (
                             production_id BIGINT GENERATED ALWAYS AS IDENTITY,
+                            production_date DATE NOT NULL,
                             title TEXT NOT NULL,
                             file_path TEXT NOT NULL,
                             file_size_gb NUMERIC(12,2)
                                 CONSTRAINT chk_production_file_size_positive
                                     CHECK (file_size_gb > 0),
+                            production_duration_sec INTEGER NOT NULL,
                             version BIGINT NOT NULL DEFAULT 0,
 
                             PRIMARY KEY (production_id)
@@ -195,6 +197,7 @@ CREATE TABLE app_user (
                           password VARCHAR(255) NOT NULL,
                           full_name VARCHAR(255) NOT NULL UNIQUE,
                           role_id BIGINT NOT NULL,
+                          last_changed DATE NOT NULL,
 
                           PRIMARY KEY (user_id),
 
