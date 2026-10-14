@@ -53,6 +53,13 @@ public class CassetteCategoryService {
     public void delete(Long categoryId){categoryRepository.deleteById(categoryId);}
 
     @Transactional(readOnly = true)
+    public CreateCassetteCategoryResponse findById(Long categoryId){
+        CassetteCategory cassetteCategory = categoryRepository.findById(categoryId).orElseThrow(() -> new ResourceNotFoundException("Cassette category with id %d not found.".formatted(categoryId)));
+
+        return cassetteCategoryMapper.toResponse(cassetteCategory);
+    }
+
+    @Transactional(readOnly = true)
     public List<CreateCassetteCategoryResponse> findAll(){
         List<CassetteCategory> cassetteCategories = categoryRepository.findAll();
 
@@ -60,8 +67,4 @@ public class CassetteCategoryService {
                 .map(cassetteCategoryMapper::toResponse)
                 .toList();
     }
-
-
-
-
 }
