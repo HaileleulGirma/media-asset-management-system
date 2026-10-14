@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!-- 1. Define folder and base name for your logs -->
+    <property name="LOG_DIR" value="logs" />
+    <property name="LOG_PREFIX" value="ena-mam" />
+
+    <!-- 2. Console Appender (So you can still see logs in your IDE/terminal) -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- 3. Monthly Rolling File Appender -->
+    <appender name="MONTHLY_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <!-- The active file being written to right now -->
+        <file>${LOG_DIR}/${LOG_PREFIX}-current.log</file>
+
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <!--
+               This pattern triggers the monthly roll.
+               When a new month starts, the old file is renamed to match this pattern.
+               Example output: ena-mam-2026-10.log
+            -->
+            <fileNamePattern>${LOG_DIR}/${LOG_PREFIX}-%d{yyyy-MM}.log</fileNamePattern>
+
+            <!-- Keep exactly 12 months of logs before deleting old ones -->
+            <maxHistory>12</maxHistory>
+
+            <!-- Optional safety constraint: don't let logs exceed 5GB total -->
+            <totalSizeCap>5GB</totalSizeCap>
+        </rollingPolicy>
+
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss} | %-5level | %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- 4. Apply the appenders to the root logger -->
+    <root level="INFO">
+        <appender-ref ref="CONSOLE" />
+        <appender-ref ref="MONTHLY_FILE" />
+    </root>
+</configuration>
