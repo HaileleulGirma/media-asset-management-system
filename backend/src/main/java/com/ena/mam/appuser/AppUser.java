@@ -3,6 +3,8 @@ package com.ena.mam.appuser;
 import com.ena.mam.approle.AppRole;
 import jakarta.persistence.*;
 
+import java.time.LocalDate;
+
 @Entity
 @Table(name = "app_user")
 public class AppUser {
@@ -25,6 +27,9 @@ public class AppUser {
     @ManyToOne
     @JoinColumn(name = "role_id")
     private AppRole role;
+
+    @Column(name = "last_changed")
+    private LocalDate lastChanged;
 
 
     public Long getUserId() {
@@ -61,5 +66,13 @@ public class AppUser {
 
     public void setRole(AppRole role) {
         this.role = role;
+    }
+
+    public LocalDate getLastChanged() {
+        return lastChanged;
+    }
+
+    public void setLastChanged(LocalDate lastChanged) {
+        this.lastChanged = lastChanged;
     }
 }
