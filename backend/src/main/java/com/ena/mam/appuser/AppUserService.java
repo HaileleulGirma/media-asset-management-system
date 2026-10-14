@@ -8,7 +8,9 @@ import com.ena.mam.exception.ResourceNotFoundException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Set;
 
@@ -49,6 +51,7 @@ public class AppUserService {
         return role != null && ASSIGNABLE_ROLE_NAMES.contains(role.getRoleName());
     }
 
+    @Transactional
     public CreateAppUserResponse create(CreateAppUserRequest request) {
         AppRole role = appRoleRepository.findById(request.role())
                 .orElseThrow(() -> new ResourceNotFoundException("Role not found: " + request.role()));
@@ -57,12 +60,15 @@ public class AppUserService {
             throw new IllegalArgumentException("That role cannot be assigned to a new user.");
         }
 
-        AppUser appUser = appUserMapper.toAppUser(request);
+        LocalDate lastChanged = LocalDate.now();
+
+        AppUser appUser = appUserMapper.toAppUser(request, lastChanged);
         appUser.setPassword(passwordEncoder.encode(appUser.getPassword()));
         AppUser savedAppUser = appUserRepository.save(appUser);
         return appUserMapper.toResponse(savedAppUser);
     }
 
+    @Transactional
     public CreateAppUserResponse update(Long appUserId, UpdateAppUserRequest request) {
         AppUser appUser = appUserRepository.findById(appUserId)
                 .orElseThrow(() -> new ResourceNotFoundException("AppUser with id %d not found.".formatted(appUserId)));
@@ -86,6 +92,7 @@ public class AppUserService {
 
             if (request.password() != null && !request.password().trim().isEmpty()) {
                 appUser.setPassword(passwordEncoder.encode(request.password()));
+                appUser.setLastChanged(LocalDate.now());
             }
 
             AppUser savedAppUser = appUserRepository.save(appUser);
@@ -109,12 +116,14 @@ public class AppUserService {
 
         if (request.password() != null && !request.password().trim().isEmpty()) {
             appUser.setPassword(passwordEncoder.encode(request.password()));
+            appUser.setLastChanged(LocalDate.now());
         }
 
         AppUser savedAppUser = appUserRepository.save(appUser);
         return appUserMapper.toResponse(savedAppUser);
     }
 
+    @Transactional
     public void delete(Long id) {
         AppUser target = appUserRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("AppUser with id %d not found.".formatted(id)));
@@ -128,12 +137,14 @@ public class AppUserService {
         appUserRepository.deleteById(id);
     }
 
+    @Transactional(readOnly = true)
     public CreateAppUserResponse findById(Long id) {
         AppUser appUser = appUserRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("AppUser with id %d not found.".formatted(id)));
         return appUserMapper.toResponse(appUser);
     }
 
+    @Transactional(readOnly = true)
     public List<CreateAppUserResponse> findAll() {
         return appUserRepository.findAll()
                 .stream()
