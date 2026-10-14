@@ -9,5 +9,4 @@ public interface AppUserRepository extends JpaRepository<AppUser, Long> {
     @Query("SELECT u FROM AppUser u LEFT JOIN FETCH u.role WHERE u.username = :username")
     Optional<AppUser> findByUsernameWithRoles(@Param("username") String username);
 
-    boolean existsByRole_RoleName(String roleName);
 }
