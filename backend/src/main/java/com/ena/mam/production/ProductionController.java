@@ -9,6 +9,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
+
 @RestController
 public class ProductionController {
     private final ProductionService service;
@@ -47,9 +49,15 @@ public class ProductionController {
     public Page<CreateProductionResponse> search(
             @RequestParam(required = false)
             String searchTerm,
+
+            @RequestParam(required = false)
+            LocalDate startDate,
+
+            @RequestParam(required = false)
+            LocalDate endDate,
             Pageable pageable
     ){
-        ProductionFilter filter = new ProductionFilter(searchTerm);
+        ProductionFilter filter = new ProductionFilter(searchTerm, startDate, endDate);
 
         return service.search(filter, pageable);
     }
