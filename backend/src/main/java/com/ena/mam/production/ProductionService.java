@@ -81,6 +81,16 @@ public class ProductionService {
                     )
             );
         }
+
+        if (filter.startDate() != null) {
+            spec = spec.and(
+                    ProductionSpecification.hasNewsDateBetween(
+                            filter.startDate(),
+                            filter.effectiveEndDate()
+                    )
+            );
+        }
+
         Pageable sortedPageable = PageRequest.of(
                 pageable.getPageNumber(),
                 pageable.getPageSize(),
