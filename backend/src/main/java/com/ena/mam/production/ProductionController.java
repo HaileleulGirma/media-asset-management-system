@@ -5,6 +5,7 @@ import com.ena.mam.dto.request.filter.ProductionFilter;
 import com.ena.mam.dto.response.CreateProductionResponse;
 import com.ena.mam.util.ClientIpUtil;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -28,7 +29,7 @@ public class ProductionController {
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/api/production")
     public CreateProductionResponse create(
-            @RequestParam CreateProductionRequest request,
+            @Valid @RequestBody CreateProductionRequest request,
             Authentication authentication,
             HttpServletRequest httpRequest
     ) {
@@ -42,19 +43,20 @@ public class ProductionController {
     }
 
     @PreAuthorize("hasRole('ADMIN')")
-    @PutMapping("/api/production")
+    @PutMapping("/api/production/{productionId}")
     public CreateProductionResponse update(
-            @RequestParam Long id,
-            @RequestParam CreateProductionRequest request,
+            @PathVariable Long productionId,
+            @Valid @RequestBody CreateProductionRequest request,
             Authentication authentication,
             HttpServletRequest httpRequest
     ) {
         String currentUsername = (authentication != null) ? authentication.getName() : "SYSTEM";
+        CreateProductionResponse response = service.update(productionId, request);
 
         log.info("AUDIT_UPDATE | Module: PRODUCTION | Status: 200 | User: '{}' | IP: {} | Method: {} | ProductionId: {} | Payload: {}",
-                currentUsername, ClientIpUtil.getClientIp(httpRequest), httpRequest.getMethod(), id, request);
+                currentUsername, ClientIpUtil.getClientIp(httpRequest), httpRequest.getMethod(), productionId, request);
 
-        return service.update(id, request);
+        return response;
     }
 
     @PreAuthorize("hasRole('ADMIN')")
@@ -65,11 +67,11 @@ public class ProductionController {
             HttpServletRequest httpRequest
     ) {
         String currentUsername = (authentication != null) ? authentication.getName() : "SYSTEM";
+        service.delete(productionId);
 
         log.info("AUDIT_DELETE | Module: PRODUCTION | Status: 204 | User: '{}' | IP: {} | Method: {} | ProductionId: {}",
                 currentUsername, ClientIpUtil.getClientIp(httpRequest), httpRequest.getMethod(), productionId);
 
-        service.delete(productionId);
         return ResponseEntity.noContent().build();
     }
 
