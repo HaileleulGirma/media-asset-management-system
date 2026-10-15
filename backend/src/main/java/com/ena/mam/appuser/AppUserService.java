@@ -62,7 +62,7 @@ public class AppUserService {
 
         LocalDate lastChanged = LocalDate.now();
 
-        AppUser appUser = appUserMapper.toAppUser(request, lastChanged);
+        AppUser appUser = appUserMapper.toAppUser(request, role, lastChanged);
         appUser.setPassword(passwordEncoder.encode(appUser.getPassword()));
         AppUser savedAppUser = appUserRepository.save(appUser);
         return appUserMapper.toResponse(savedAppUser);
