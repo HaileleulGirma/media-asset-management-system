@@ -59,6 +59,7 @@
             <div>
                 <div class="admin-pinned-name" id="admin-pinned-name"></div>
                 <div class="admin-pinned-username" id="admin-pinned-username"></div>
+                <div class="admin-pinned-username" id="admin-pinned-pwage"></div>
             </div>
             <button type="button" class="btn btn-secondary btn-sm" id="admin-edit-btn">Edit</button>
         </div>
@@ -118,6 +119,36 @@
         return roleObj ? roleObj.roleName : "";
     }
 
+    function lastChangedOf(user) {
+        return user.lastChanged ?? user.lastchanged ?? user.last_changed ?? null;
+    }
+
+// Whole days between today and a "YYYY-MM-DD" date. Both sides are built
+// as UTC midnights so time zones and DST can't shift the result by a day.
+    function daysSince(value) {
+        if (!value) return null;
+        let y, mo, d;
+        if (Array.isArray(value)) {
+            [y, mo, d] = value;
+        } else {
+            const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(value));
+            if (!m) return null;
+            y = +m[1]; mo = +m[2]; d = +m[3];
+        }
+        const then = Date.UTC(y, mo - 1, d);
+        const now = new Date();
+        const today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+        return Math.max(0, Math.round((today - then) / 86400000));
+    }
+
+    function formatPasswordAge(user) {
+        const days = daysSince(lastChangedOf(user));
+        if (days === null) return "—";
+        if (days === 0) return "Today";
+        if (days === 1) return "1 day ago";
+        return days + " days ago";
+    }
+
     async function loadUsers() {
         hideAlert(listAlert);
         try {
@@ -144,6 +175,7 @@
         adminPanel.classList.remove("hidden");
         document.getElementById("admin-pinned-name").textContent = systemAdmin.fullname || "";
         document.getElementById("admin-pinned-username").textContent = "@" + (systemAdmin.username || "");
+        document.getElementById("admin-pinned-pwage").textContent = "Password changed: " + formatPasswordAge(systemAdmin);
 
         const editBtn = document.getElementById("admin-edit-btn");
         // Replace to clear any previously attached listener before re-adding.
@@ -213,6 +245,7 @@
                 <td>${escapeHtml(u.fullname ?? "")} ${isSelf ? `<span class="role-badge" style="background:#e0f2fe; color:#0369a1;">You</span>` : ""}</td>
                 <td>${escapeHtml(u.username ?? "")}</td>
                 <td><span class="role-badge">${escapeHtml(roleLabel)}</span></td>
+                <td>${escapeHtml(formatPasswordAge(u))}</td>
                 <td>
                     <div class="row-actions">
                         <button type="button" class="btn btn-secondary btn-sm edit-btn">Edit</button>
