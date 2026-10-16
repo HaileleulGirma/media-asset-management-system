@@ -1,33 +1,33 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-    <!-- 1. Define folder and base name for your logs -->
+    <!-- 1. Define base folder for your logs -->
     <property name="LOG_DIR" value="logs" />
     <property name="LOG_PREFIX" value="ena-mam" />
 
-    <!-- 2. Console Appender (So you can still see logs in your IDE/terminal) -->
+    <!-- 2. Console Appender -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <pattern>%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n</pattern>
         </encoder>
     </appender>
 
-    <!-- 3. Monthly Rolling File Appender -->
-    <appender name="MONTHLY_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <!-- The active file being written to right now -->
-        <file>${LOG_DIR}/${LOG_PREFIX}-current.log</file>
+    <!-- 3. Daily Rolling File Appender with Year/Month Folder Structure -->
+    <appender name="DAILY_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+
+        <!-- We omit the <file> tag here so Logback writes directly to the patterned file path -->
 
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
             <!--
-               This pattern triggers the monthly roll.
-               When a new month starts, the old file is renamed to match this pattern.
-               Example output: ena-mam-2026-10.log
+               The %d{yyyy/MM/dd} pattern forces a daily roll.
+               Logback automatically interprets the slashes as directories.
+               Output example: logs/2026/10/15.log
             -->
-            <fileNamePattern>${LOG_DIR}/${LOG_PREFIX}-%d{yyyy-MM}.log</fileNamePattern>
+            <fileNamePattern>${LOG_DIR}/%d{yyyy/MM/dd}.log</fileNamePattern>
 
-            <!-- Keep exactly 12 months of logs before deleting old ones -->
-            <maxHistory>12</maxHistory>
+            <!-- Keep exactly 365 days of logs before deleting old ones -->
+            <maxHistory>365</maxHistory>
 
-            <!-- Optional safety constraint: don't let logs exceed 5GB total -->
+            <!-- Total size cap for all logs -->
             <totalSizeCap>5GB</totalSizeCap>
         </rollingPolicy>
 
@@ -36,9 +36,9 @@
         </encoder>
     </appender>
 
-    <!-- 4. Apply the appenders to the root logger -->
+    <!-- 4. Apply the appenders -->
     <root level="INFO">
         <appender-ref ref="CONSOLE" />
-        <appender-ref ref="MONTHLY_FILE" />
+        <appender-ref ref="DAILY_FILE" />
     </root>
 </configuration>
