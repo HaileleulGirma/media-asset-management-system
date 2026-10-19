@@ -35,7 +35,7 @@ public class ProductionService {
     public CreateProductionResponse update(Long id, CreateProductionRequest request){
         if (request.version() == null) {
             throw new IllegalArgumentException(
-                    "Version number is required when updating Photo."
+                    "Version number is required when updating Production."
             );
         }
 
@@ -55,9 +55,7 @@ public class ProductionService {
             );
         }
 
-        production.setTitle(request.title());
-        production.setFilePath(request.filePath());
-        production.setFileSizeGb(request.fileSizeGb());
+        mapper.updateProduction(production, request);
 
         Production savedProduction = repository.save(production);
         return mapper.toResponse(savedProduction);
