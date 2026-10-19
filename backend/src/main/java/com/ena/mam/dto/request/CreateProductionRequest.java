@@ -1,10 +1,12 @@
 package com.ena.mam.dto.request;
 
+import com.ena.mam.util.DurationUtils;
 import jakarta.validation.constraints.*;
 
 import java.time.LocalDate;
 
 public record CreateProductionRequest(
+        @NotNull(message = "Production date is required.")
         @PastOrPresent(message = "Future dates not allowed.")
         LocalDate productionDate,
 
@@ -28,4 +30,8 @@ public record CreateProductionRequest(
         Integer durationSeconds,
         Long version
 ) {
+        @AssertTrue(message = "Total duration must be at least 1 second.")
+        public boolean isDurationValid() {
+                return DurationUtils.toTotalSeconds(durationHours, durationMinutes, durationSeconds) >= 1;
+        }
 }
