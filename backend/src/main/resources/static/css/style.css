@@ -1107,3 +1107,14 @@ tr:hover td {
     width: auto;
     margin-right: 8px;
 }
+
+/* Two-column variant of the search grid (production search and add forms) */
+.search-grid--two {
+    grid-template-columns: 1.3fr 1fr;
+}
+
+@media (max-width: 900px) {
+    .search-grid--two {
+        grid-template-columns: 1fr;
+    }
+}

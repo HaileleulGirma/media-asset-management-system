@@ -28,6 +28,7 @@
     <div class="topnav-brand">MAM</div>
     <div class="topnav-links">
       ${navLink("news.html", "News", true)}
+      ${navLink("production.html", "Production", isAdminOrStaff)}
       ${navLink("reporters.html", "Reporters", isAdminOrStaff)}
       ${navLink("cameramen.html", "Cameramen", isAdminOrStaff)}
       ${navLink("locations.html", "Locations", isAdminOrStaff)}

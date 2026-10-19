@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Production — MAM</title>
+    <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+<div class="app-shell">
+    <div id="app-nav"></div>
+
+    <div class="main-content main-content--wide">
+
+        <!-- Admin-only tabs. production.js removes the whole bar (and the
+             admin panels below) from the DOM for Staff. -->
+        <div class="tab-bar" id="tab-bar">
+            <button type="button" id="tab-search-btn" class="tab-btn">Search</button>
+            <button type="button" id="tab-add-btn" class="tab-btn">Add production item</button>
+            <button type="button" id="tab-modify-btn" class="tab-btn">Modify production</button>
+        </div>
+
+        <!-- Add production panel (ADMIN only) -->
+        <div id="create-production-panel" class="panel hidden">
+            <h2>Add production item</h2>
+
+            <div id="create-production-alert" class="alert"></div>
+
+            <form id="create-production-form" novalidate>
+                <div class="search-grid search-grid--two">
+
+                    <!-- Column 1: title + date / path -->
+                    <div class="search-col search-col-terms">
+                        <div class="field" data-field="title">
+                            <label for="title">Title</label>
+                            <input type="text" id="title" name="title" required />
+                            <div class="field-error"></div>
+                        </div>
+
+                        <div class="field-row">
+                            <div class="field" data-field="productionDate">
+                                <label for="productionDate">Production date</label>
+                                <input type="date" id="productionDate" name="productionDate" />
+                                <div class="field-error"></div>
+                            </div>
+                            <div class="field" data-field="filePath">
+                                <label for="filePath">File path</label>
+                                <input type="text" id="filePath" name="filePath" required placeholder="/mnt/archive/2026/..." />
+                                <div class="field-error"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Column 2: size + duration -->
+                    <div class="search-col">
+                        <div class="field" data-field="fileSizeGb">
+                            <label for="fileSize">File size</label>
+                            <div class="input-with-select">
+                                <input type="number" id="fileSize" name="fileSize" min="0" step="0.01" required />
+                                <select id="fileSizeUnit" name="fileSizeUnit">
+                                    <option value="GB" selected>GB</option>
+                                    <option value="MB">MB</option>
+                                </select>
+                            </div>
+                            <div class="field-error"></div>
+                        </div>
+
+                        <div class="field">
+                            <label>Duration</label>
+                            <div class="field-row">
+                                <div class="field" data-field="durationHours">
+                                    <input type="number" id="durationHours" min="0" step="1" placeholder="Hours" aria-label="Hours" />
+                                    <div class="field-error"></div>
+                                </div>
+                                <div class="field" data-field="durationMinutes">
+                                    <input type="number" id="durationMinutes" min="0" max="59" step="1" placeholder="Minutes" aria-label="Minutes" />
+                                    <div class="field-error"></div>
+                                </div>
+                                <div class="field" data-field="durationSeconds">
+                                    <input type="number" id="durationSeconds" min="0" max="59" step="1" placeholder="Seconds" aria-label="Seconds" />
+                                    <div class="field-error"></div>
+                                </div>
+                            </div>
+                            <div class="hint">Hours, minutes and seconds. Empty counts as 0.</div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <button type="submit" id="create-production-submit" class="btn btn-primary">Add production item</button>
+                <button type="button" id="create-production-reset" class="btn btn-secondary">Clear form</button>
+            </form>
+        </div>
+
+        <!-- Search panel (ADMIN + STAFF) -->
+        <div id="search-production-panel" class="panel">
+            <h2>Search production</h2>
+
+            <form id="search-production-form" novalidate>
+                <div class="search-grid search-grid--two">
+
+                    <div class="search-col search-col-terms">
+                        <div class="field">
+                            <label>Search terms</label>
+
+                            <div class="term-type-selector" id="termTypeSelector">
+                                <button type="button" class="term-type-btn active" data-type="and">Must include</button>
+                                <button type="button" class="term-type-btn" data-type="or">Any of these</button>
+                                <button type="button" class="term-type-btn" data-type="not">Exclude</button>
+                            </div>
+
+                            <div class="term-input-row">
+                                <input type="text" id="searchTermInput" placeholder="Type a word or phrase, then press Enter or Add" />
+                                <button type="button" id="addTermBtn" class="btn btn-secondary">Add</button>
+                            </div>
+                            <div class="hint">Pick a type above, type a word or phrase, then Add. Multi-word entries are matched as an exact phrase.</div>
+
+                            <div class="chip-group">
+                                <span class="chip-group-label">Must include</span>
+                                <div id="mustIncludeChips" class="chip-row"></div>
+                            </div>
+                            <div class="chip-group">
+                                <span class="chip-group-label">Any of these</span>
+                                <div id="anyOfChips" class="chip-row"></div>
+                            </div>
+                            <div class="chip-group">
+                                <span class="chip-group-label">Exclude</span>
+                                <div id="excludeChips" class="chip-row"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Column 2: date range -->
+                    <div class="search-col">
+                        <div class="field">
+                            <label for="startDate">On / From date</label>
+                            <input type="date" id="startDate" name="startDate" />
+                            <div class="field-error"></div>
+                        </div>
+                        <div class="field">
+                            <label for="endDate">To date (Optional)</label>
+                            <input type="date" id="endDate" name="endDate" />
+                            <div class="hint">Leave empty to search a single day. Enabled once a From date is chosen.</div>
+                            <div class="field-error"></div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <button type="submit" id="search-submit" class="btn btn-primary">Search</button>
+                <button type="button" id="search-reset" class="btn btn-secondary">Clear filters</button>
+            </form>
+        </div>
+
+        <!-- Modify / Delete panel (ADMIN only) -->
+        <div id="modify-production-panel" class="panel hidden">
+            <h2>Modify / delete production</h2>
+            <p class="hint">Select a date to view and manage production items from that day.</p>
+
+            <div class="modify-search-row">
+                <div class="field">
+                    <label for="modifySearchDate">Production date</label>
+                    <input type="date" id="modifySearchDate" />
+                </div>
+                <button id="modifySearchBtn" type="button" class="btn btn-primary">Load production</button>
+            </div>
+
+            <div id="modify-list-alert" class="alert"></div>
+
+            <table id="modify-results-table" class="hidden">
+                <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Title</th>
+                    <th>File path</th>
+                    <th>Duration</th>
+                    <th>Size (GB)</th>
+                    <th>Actions</th>
+                </tr>
+                </thead>
+                <tbody id="modify-results-body"></tbody>
+            </table>
+        </div>
+
+        <!-- Search results modal -->
+        <div id="search-results-overlay" class="modal-overlay hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Search results</h2>
+                    <button type="button" id="search-results-close" class="modal-close-btn" aria-label="Close">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div id="search-results-empty" class="empty-state">Run a search to see results.</div>
+                    <table id="search-results-table" class="hidden">
+                        <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Title</th>
+                            <th>File path</th>
+                            <th>Duration</th>
+                            <th>Size (GB)</th>
+                        </tr>
+                        </thead>
+                        <tbody id="search-results-body"></tbody>
+                    </table>
+
+                    <div id="search-pagination" class="pagination hidden">
+                        <button type="button" id="page-prev" class="btn btn-secondary">Previous</button>
+                        <span id="page-status"></span>
+                        <button type="button" id="page-next" class="btn btn-secondary">Next</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Edit production modal (ADMIN only) -->
+        <div id="edit-production-overlay" class="modal-overlay hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Edit production item</h2>
+                    <button type="button" id="edit-production-close" class="modal-close-btn" aria-label="Close">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div id="edit-production-alert" class="alert"></div>
+
+                    <form id="edit-production-form" novalidate>
+                        <input type="hidden" id="editProductionId" />
+
+                        <div class="field" data-field="title">
+                            <label for="editTitle">Title</label>
+                            <input type="text" id="editTitle" required />
+                            <div class="field-error"></div>
+                        </div>
+
+                        <div class="field-row">
+                            <div class="field" data-field="productionDate">
+                                <label for="editProductionDate">Production date</label>
+                                <input type="date" id="editProductionDate" />
+                                <div class="field-error"></div>
+                            </div>
+                            <div class="field" data-field="filePath">
+                                <label for="editFilePath">File path</label>
+                                <input type="text" id="editFilePath" />
+                                <div class="field-error"></div>
+                            </div>
+                        </div>
+
+                        <div class="field" data-field="fileSizeGb">
+                            <label for="editFileSize">File size</label>
+                            <div class="input-with-select">
+                                <input type="number" id="editFileSize" min="0" step="0.01" />
+                                <select id="editFileSizeUnit">
+                                    <option value="GB" selected>GB</option>
+                                    <option value="MB">MB</option>
+                                </select>
+                            </div>
+                            <div class="field-error"></div>
+                        </div>
+
+                        <div class="field">
+                            <label>Duration</label>
+                            <div class="field-row">
+                                <div class="field" data-field="durationHours">
+                                    <input type="number" id="editDurationHours" min="0" step="1" placeholder="Hours" aria-label="Hours" />
+                                    <div class="field-error"></div>
+                                </div>
+                                <div class="field" data-field="durationMinutes">
+                                    <input type="number" id="editDurationMinutes" min="0" max="59" step="1" placeholder="Minutes" aria-label="Minutes" />
+                                    <div class="field-error"></div>
+                                </div>
+                                <div class="field" data-field="durationSeconds">
+                                    <input type="number" id="editDurationSeconds" min="0" max="59" step="1" placeholder="Seconds" aria-label="Seconds" />
+                                    <div class="field-error"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="modal-actions">
+                            <button type="submit" id="edit-production-submit" class="btn btn-primary">Save changes</button>
+                            <button type="button" id="edit-production-cancel" class="btn btn-secondary">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/nav.js"></script>
+<script src="/js/ethiopian-calendar.js"></script>
+<script src="/js/date-picker.js"></script>
+<script src="/js/production.js"></script>
+</body>
+</html>
