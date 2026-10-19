@@ -30,6 +30,7 @@ public class Production {
     @Column(name = "production_duration_sec")
     private Integer productionDurationSec;
 
+    @Version
     @Column(name = "version")
     private Long version;
 

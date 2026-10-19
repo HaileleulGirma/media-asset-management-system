@@ -46,6 +46,7 @@ public class Photo {
     @JoinColumn(name = "imported_by")
     private StaffMember importer;
 
+    @Version
     @Column(name = "version")
     private Long version;
 
