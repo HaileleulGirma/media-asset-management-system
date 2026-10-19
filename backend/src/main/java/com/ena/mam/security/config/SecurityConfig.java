@@ -77,6 +77,7 @@ public class SecurityConfig {
                         .requestMatchers("/",
                                 "/index.html",
                                 "/news.html",
+                                "/production.html",
                                 "/reporters.html",
                                 "/cameramen.html",
                                 "/locations.html",
