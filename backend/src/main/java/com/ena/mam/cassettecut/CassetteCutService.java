@@ -140,10 +140,11 @@ public class CassetteCutService {
             );
         }
 
-        if (filter.cutDate() != null) {
+        if (filter.startDate() != null) {
             spec = spec.and(
-                    CassetteCutSpecification.hasCutDate(
-                            filter.cutDate()
+                    CassetteCutSpecification.hasCassetteCutBetween(
+                            filter.startDate(),
+                            filter.effectiveEndDate()
                     )
             );
         }
