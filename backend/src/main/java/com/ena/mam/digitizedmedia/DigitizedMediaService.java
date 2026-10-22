@@ -116,6 +116,14 @@ public class DigitizedMediaService {
 
         Specification<DigitizedMedia> spec = Specification.allOf();
 
+        if (filter.startDate() != null){
+            spec = spec.and(
+                    DigitizedMediaSpecification.hasDigitizedMediaBetween(
+                            filter.startDate(),
+                            filter.effectiveEndDate())
+            );
+        }
+
         if (filter.importerId() != null) {
             spec = spec.and(
                     DigitizedMediaSpecification.hasImporterId(
