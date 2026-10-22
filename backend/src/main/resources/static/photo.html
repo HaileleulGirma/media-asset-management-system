@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Photos — MAM</title>
+    <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+<div class="app-shell">
+    <div id="app-nav"></div>
+
+    <div class="main-content main-content--wide">
+
+        <!-- Tabs: Admin and Staff only. photo.js removes the tab bar, the
+             add/modify panels and the edit modal from the DOM for Viewers,
+             who can only search. -->
+        <div class="tab-bar" id="tab-bar">
+            <button type="button" id="tab-search-btn" class="tab-btn">Search</button>
+            <button type="button" id="tab-add-btn" class="tab-btn">Add photo item</button>
+            <button type="button" id="tab-modify-btn" class="tab-btn">Modify photos</button>
+            <button type="button" id="tab-summary-btn" class="tab-btn">Staff Summary</button>
+        </div>
+
+        <!-- Add photo panel (ADMIN + STAFF) -->
+        <div id="create-photo-panel" class="panel hidden">
+            <h2>Add photo item</h2>
+
+            <div id="create-photo-alert" class="alert"></div>
+
+            <form id="create-photo-form" novalidate>
+                <div class="search-grid">
+
+                    <!-- Column 1: title, date, path -->
+                    <div class="search-col search-col-terms">
+                        <div class="field" data-field="title">
+                            <label for="title">Title</label>
+                            <input type="text" id="title" name="title" required />
+                            <div class="field-error"></div>
+                        </div>
+
+                        <div class="field-row">
+                            <div class="field" data-field="photoDate">
+                                <label for="photoDate">Photo date</label>
+                                <input type="date" id="photoDate" name="photoDate" />
+                                <div class="field-error"></div>
+                            </div>
+                            <div class="field" data-field="filePath">
+                                <label for="filePath">File path</label>
+                                <input type="text" id="filePath" name="filePath" required placeholder="/mnt/archive/2026/..." />
+                                <div class="field-error"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Column 2: files, size, importer -->
+                    <div class="search-col">
+                        <div class="field" data-field="numberOfFiles">
+                            <label for="numberOfFiles">Number of files</label>
+                            <input type="number" id="numberOfFiles" name="numberOfFiles" min="1" step="1" required />
+                            <div class="field-error"></div>
+                        </div>
+
+                        <div class="field" data-field="fileSizeMb">
+                            <label for="fileSize">Total size</label>
+                            <div class="input-with-select">
+                                <input type="number" id="fileSize" name="fileSize" min="0" step="0.01" required />
+                                <select id="fileSizeUnit" name="fileSizeUnit">
+                                    <option value="MB" selected>MB</option>
+                                    <option value="GB">GB</option>
+                                </select>
+                            </div>
+                            <div class="field-error"></div>
+                        </div>
+
+                        <div class="field" data-field="importedBy">
+                            <label for="importedBy">Imported by</label>
+                            <select id="importedBy" name="importedBy" required>
+                                <option value="">Select staff member...</option>
+                            </select>
+                            <div class="field-error"></div>
+                        </div>
+                    </div>
+
+                    <!-- Column 3: cameramen -->
+                    <div class="search-col">
+                        <div class="field">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="createActiveOnly" checked />
+                                Active only
+                            </label>
+                            <div class="hint">Off shows only inactive cameramen — useful for backfilling older photos.</div>
+                        </div>
+
+                        <div class="field" data-field="cameramanIds">
+                            <label for="cameramanIds">Cameramen</label>
+                            <div id="cameramanChips" class="chip-row"></div>
+                            <select id="cameramanIds" name="cameramanIds" multiple></select>
+                            <div class="hint">At least one is required. Hold Ctrl (Cmd on Mac) to select multiple.</div>
+                            <div class="field-error"></div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <button type="submit" id="create-photo-submit" class="btn btn-primary">Add photo item</button>
+                <button type="button" id="create-photo-reset" class="btn btn-secondary">Clear form</button>
+            </form>
+        </div>
+
+        <!-- Search panel (everyone) -->
+        <div id="search-photo-panel" class="panel">
+            <h2>Search photos</h2>
+
+            <div id="search-alert" class="alert"></div>
+
+            <form id="search-photo-form" novalidate>
+                <div class="search-grid">
+
+                    <!-- Column 1: search-term builder -->
+                    <div class="search-col search-col-terms">
+                        <div class="field">
+                            <label>Search terms</label>
+
+                            <div class="term-type-selector" id="termTypeSelector">
+                                <button type="button" class="term-type-btn active" data-type="and">Must include</button>
+                                <button type="button" class="term-type-btn" data-type="or">Any of these</button>
+                                <button type="button" class="term-type-btn" data-type="not">Exclude</button>
+                            </div>
+
+                            <div class="term-input-row">
+                                <input type="text" id="searchTermInput" placeholder="Type a word or phrase, then press Enter or Add" />
+                                <button type="button" id="addTermBtn" class="btn btn-secondary">Add</button>
+                            </div>
+                            <div class="hint">Pick a type above, type a word or phrase, then Add. Multi-word entries are matched as an exact phrase.</div>
+
+                            <div class="chip-group">
+                                <span class="chip-group-label">Must include</span>
+                                <div id="mustIncludeChips" class="chip-row"></div>
+                            </div>
+                            <div class="chip-group">
+                                <span class="chip-group-label">Any of these</span>
+                                <div id="anyOfChips" class="chip-row"></div>
+                            </div>
+                            <div class="chip-group">
+                                <span class="chip-group-label">Exclude</span>
+                                <div id="excludeChips" class="chip-row"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Column 2: date range -->
+                    <div class="search-col">
+                        <div class="field">
+                            <label for="startDate">On / From date</label>
+                            <input type="date" id="startDate" name="startDate" />
+                            <div class="field-error"></div>
+                        </div>
+                        <div class="field">
+                            <label for="endDate">To date (Optional)</label>
+                            <input type="date" id="endDate" name="endDate" />
+                            <div class="hint">Leave empty to search a single day. Enabled once a From date is chosen.</div>
+                            <div class="field-error"></div>
+                        </div>
+                    </div>
+
+                    <!-- Column 3: cameraman + importer filters -->
+                    <div class="search-col">
+                        <div class="field">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="searchActiveOnly" checked />
+                                Active only
+                            </label>
+                            <div class="hint">Off shows only inactive cameramen and staff — useful for older photos.</div>
+                        </div>
+
+                        <div class="field" id="searchCameramanField">
+                            <label for="searchCameramanId">Cameraman</label>
+                            <select id="searchCameramanId">
+                                <option value="">Any cameraman</option>
+                            </select>
+                        </div>
+
+                        <!-- Removed for Viewers by photo.js (staff list is not theirs to see) -->
+                        <div class="field" id="searchImporterField">
+                            <label for="searchImporterId">Imported by</label>
+                            <select id="searchImporterId">
+                                <option value="">Any staff member</option>
+                            </select>
+                        </div>
+                    </div>
+
+                </div>
+
+                <button type="submit" id="search-submit" class="btn btn-primary">Search</button>
+                <button type="button" id="search-reset" class="btn btn-secondary">Clear filters</button>
+            </form>
+        </div>
+
+        <!-- Modify / Delete panel (ADMIN + STAFF) -->
+        <div id="modify-photo-panel" class="panel hidden">
+            <h2>Modify / delete photos</h2>
+            <p class="hint">Select a date to view and manage photo items from that day.</p>
+
+            <div class="modify-search-row">
+                <div class="field">
+                    <label for="modifySearchDate">Photo date</label>
+                    <input type="date" id="modifySearchDate" />
+                </div>
+                <button id="modifySearchBtn" type="button" class="btn btn-primary">Load photos</button>
+            </div>
+
+            <div id="modify-list-alert" class="alert"></div>
+
+            <table id="modify-results-table" class="hidden">
+                <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Title</th>
+                    <th>Cameramen</th>
+                    <th>File path</th>
+                    <th>Files</th>
+                    <th>Size (MB)</th>
+                    <th>Imported by</th>
+                    <th>Actions</th>
+                </tr>
+                </thead>
+                <tbody id="modify-results-body"></tbody>
+            </table>
+        </div>
+
+        <!-- Staff summary panel (ADMIN + STAFF) -->
+        <div id="staff-summary-panel" class="panel hidden">
+            <h2>Staff summary</h2>
+            <p class="hint">Select a staff member and a date range, then load their summary. Results open in a separate panel, same as Search.</p>
+
+            <div class="field">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="summaryActiveOnly" checked />
+                    Active only
+                </label>
+                <div class="hint">Off shows only inactive staff.</div>
+            </div>
+
+            <div class="summary-search-row">
+                <div class="field">
+                    <label for="summaryStaffId">Staff member</label>
+                    <select id="summaryStaffId">
+                        <option value="">Select staff member...</option>
+                    </select>
+                    <div class="field-error"></div>
+                </div>
+                <div class="field">
+                    <label for="summaryStartDate">From date</label>
+                    <input type="date" id="summaryStartDate" />
+                    <div class="field-error"></div>
+                </div>
+                <div class="field">
+                    <label for="summaryEndDate">To date</label>
+                    <input type="date" id="summaryEndDate" />
+                    <div class="field-error"></div>
+                </div>
+                <button type="button" id="summaryLoadBtn" class="btn btn-primary">Load summary</button>
+            </div>
+
+            <div id="summary-alert" class="alert"></div>
+        </div>
+
+        <!-- Search results modal -->
+        <div id="search-results-overlay" class="modal-overlay hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Search results</h2>
+                    <button type="button" id="search-results-close" class="modal-close-btn" aria-label="Close">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div id="search-results-empty" class="empty-state">Run a search to see results.</div>
+                    <table id="search-results-table" class="hidden">
+                        <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Title</th>
+                            <th>Cameramen</th>
+                            <th>File path</th>
+                            <th>Files</th>
+                            <th>Size (MB)</th>
+                        </tr>
+                        </thead>
+                        <tbody id="search-results-body"></tbody>
+                    </table>
+
+                    <div id="search-pagination" class="pagination hidden">
+                        <button type="button" id="page-prev" class="btn btn-secondary">Previous</button>
+                        <span id="page-status"></span>
+                        <button type="button" id="page-next" class="btn btn-secondary">Next</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Staff summary results modal (ADMIN + STAFF): totals for the
+             chosen staff member and range, plus every photo item they
+             imported, paged on the client. -->
+        <div id="summary-results-overlay" class="modal-overlay hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="summary-modal-title">Staff summary</h2>
+                    <button type="button" id="summary-results-close" class="modal-close-btn" aria-label="Close">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div id="summary-modal-loading" class="empty-state">Loading...</div>
+                    <div id="summary-modal-empty" class="empty-state hidden">This staff member has no imported photos in this range.</div>
+
+                    <div id="summary-modal-content" class="hidden">
+                        <div class="summary-stats">
+                            <div class="summary-card">
+                                <div class="summary-card-label">Photo items</div>
+                                <div class="summary-card-value" id="summaryCount">0</div>
+                                <div class="summary-card-sub">imported</div>
+                            </div>
+                            <div class="summary-card">
+                                <div class="summary-card-label">Files</div>
+                                <div class="summary-card-value" id="summaryFiles">0</div>
+                                <div class="summary-card-sub">in total</div>
+                            </div>
+                            <div class="summary-card">
+                                <div class="summary-card-label">Total size</div>
+                                <div class="summary-card-value" id="summarySizeMb">0.00</div>
+                                <div class="summary-card-sub">MB <span id="summarySizeGb"></span></div>
+                            </div>
+                        </div>
+
+                        <div class="summary-section">
+                            <h3>Photos imported</h3>
+                            <table id="summary-table">
+                                <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Title</th>
+                                    <th>Cameramen</th>
+                                    <th>File path</th>
+                                    <th>Files</th>
+                                    <th>Size (MB)</th>
+                                </tr>
+                                </thead>
+                                <tbody id="summary-body"></tbody>
+                            </table>
+                            <div class="pagination">
+                                <button type="button" id="summary-prev" class="btn btn-secondary">Previous</button>
+                                <span id="summary-page-status"></span>
+                                <button type="button" id="summary-next" class="btn btn-secondary">Next</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Edit photo modal (ADMIN + STAFF) -->
+        <div id="edit-photo-overlay" class="modal-overlay hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Edit photo item</h2>
+                    <button type="button" id="edit-photo-close" class="modal-close-btn" aria-label="Close">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div id="edit-photo-alert" class="alert"></div>
+
+                    <form id="edit-photo-form" novalidate>
+                        <input type="hidden" id="editPhotoId" />
+
+                        <div class="field" data-field="title">
+                            <label for="editTitle">Title</label>
+                            <input type="text" id="editTitle" required />
+                            <div class="field-error"></div>
+                        </div>
+
+                        <div class="field-row">
+                            <div class="field" data-field="photoDate">
+                                <label for="editPhotoDate">Photo date</label>
+                                <input type="date" id="editPhotoDate" />
+                                <div class="field-error"></div>
+                            </div>
+                            <div class="field" data-field="filePath">
+                                <label for="editFilePath">File path</label>
+                                <input type="text" id="editFilePath" />
+                                <div class="field-error"></div>
+                            </div>
+                        </div>
+
+                        <div class="field-row">
+                            <div class="field" data-field="numberOfFiles">
+                                <label for="editNumberOfFiles">Number of files</label>
+                                <input type="number" id="editNumberOfFiles" min="1" step="1" />
+                                <div class="field-error"></div>
+                            </div>
+                            <div class="field" data-field="fileSizeMb">
+                                <label for="editFileSize">Total size</label>
+                                <div class="input-with-select">
+                                    <input type="number" id="editFileSize" min="0" step="0.01" />
+                                    <select id="editFileSizeUnit">
+                                        <option value="MB" selected>MB</option>
+                                        <option value="GB">GB</option>
+                                    </select>
+                                </div>
+                                <div class="field-error"></div>
+                            </div>
+                        </div>
+
+                        <div class="field" data-field="importedBy">
+                            <label for="editImportedBy">Imported by</label>
+                            <select id="editImportedBy">
+                                <option value="">Select staff member...</option>
+                            </select>
+                            <div class="field-error"></div>
+                        </div>
+
+                        <div class="field">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="editActiveOnly" checked />
+                                Active cameramen only
+                            </label>
+                        </div>
+
+                        <div class="field" data-field="cameramanIds">
+                            <label for="editCameramanIds">Cameramen</label>
+                            <div id="editCameramanChips" class="chip-row"></div>
+                            <select id="editCameramanIds" multiple></select>
+                            <div class="hint">At least one is required. Hold Ctrl (Cmd on Mac) to select multiple.</div>
+                            <div class="field-error"></div>
+                        </div>
+
+                        <div class="modal-actions">
+                            <button type="submit" id="edit-photo-submit" class="btn btn-primary">Save changes</button>
+                            <button type="button" id="edit-photo-cancel" class="btn btn-secondary">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/nav.js"></script>
+<script src="/js/ethiopian-calendar.js"></script>
+<script src="/js/date-picker.js"></script>
+<script src="/js/photo.js"></script>
+</body>
+</html>
