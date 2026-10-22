@@ -70,7 +70,7 @@ public class CassetteCategoryController {
         return ResponseEntity.noContent().build();
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'VIEWER')")
     @GetMapping("/api/cassette-category/{cassetteCategoryId}")
     public CreateCassetteCategoryResponse findById(
             @PathVariable Long cassetteCategoryId,
@@ -85,7 +85,7 @@ public class CassetteCategoryController {
         return cassetteCategoryService.findById(cassetteCategoryId);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'VIEWER')")
     @GetMapping("/api/cassette-category")
     public List<CreateCassetteCategoryResponse> findAll(
             Authentication authentication,
