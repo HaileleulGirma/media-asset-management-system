@@ -1118,3 +1118,17 @@ tr:hover td {
         grid-template-columns: 1fr;
     }
 }
+
+/* Define the custom properties here */
+:root {
+    --text-muted: #666;
+    --border: #ddd;
+}
+
+.picker-status { font-size: 0.85rem; margin-top: 4px; color: var(--text-muted, #666); min-height: 1.2em; }
+.picker-status--ok { color: #1a7f37; }
+.picker-status--error { color: #c62828; }
+.private-badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 0.75rem; font-weight: 600; background: #fde8e8; color: #c62828; }
+.cassette-card { border: 1px solid var(--border, #ddd); border-radius: 8px; padding: 16px; margin: 16px 0; }
+.cassette-card-head { display: flex; align-items: center; gap: 12px; }
+.cuts-section { margin-top: 24px; }
