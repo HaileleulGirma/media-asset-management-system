@@ -14,6 +14,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
+
 @Slf4j
 @RestController
 public class CassetteCutController {
@@ -77,7 +79,8 @@ public class CassetteCutController {
     public Page<CreateCassetteCutResponse> search(
             @RequestParam(required = false) Long digitizedMediaId,
             @RequestParam(required = false) Long categoryId,
-            @RequestParam(required = false) java.time.LocalDate cutDate,
+            @RequestParam(required = false) LocalDate startDate,
+            @RequestParam(required = false) LocalDate endDate,
             @RequestParam(required = false) String searchTerm,
             Authentication authentication,
             HttpServletRequest httpRequest,
@@ -86,7 +89,8 @@ public class CassetteCutController {
         CassetteCutFilter filter = new CassetteCutFilter(
                 digitizedMediaId,
                 categoryId,
-                cutDate,
+                startDate,
+                endDate,
                 searchTerm
         );
 
