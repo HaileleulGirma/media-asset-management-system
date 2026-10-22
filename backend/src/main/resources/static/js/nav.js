@@ -29,6 +29,9 @@
     <div class="topnav-links">
       ${navLink("news.html", "News", true)}
       ${navLink("production.html", "Production", isAdminOrStaff)}
+      ${navLink("photo.html", "Photos", true)}
+      ${navLink("cassettes.html", "Cassettes", true)}
+      ${navLink("cassette-categories.html", "Cassette Categories", isAdmin)}
       ${navLink("reporters.html", "Reporters", isAdminOrStaff)}
       ${navLink("cameramen.html", "Cameramen", isAdminOrStaff)}
       ${navLink("locations.html", "Locations", isAdminOrStaff)}
