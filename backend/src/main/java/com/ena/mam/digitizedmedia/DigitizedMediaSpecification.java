@@ -2,7 +2,13 @@ package com.ena.mam.digitizedmedia;
 
 import org.springframework.data.jpa.domain.Specification;
 
+import java.time.LocalDate;
+
 public class DigitizedMediaSpecification {
+
+    public static Specification<DigitizedMedia> hasDigitizedMediaBetween(LocalDate startDate, LocalDate endDate){
+        return (root, query, cb) -> cb.between(root.get("digitizedDate"), startDate, endDate);
+    }
 
     public static Specification<DigitizedMedia> hasImporterId(Long importerId) {
         return (root, query, cb) ->
@@ -15,7 +21,7 @@ public class DigitizedMediaSpecification {
     public static Specification<DigitizedMedia> hasCategoryId(Long categoryId) {
         return (root, query, cb) ->
                 cb.equal(
-                        root.get("category").get("categoryId"),
+                        root.get("cassetteCategory").get("categoryId"),
                         categoryId
                 );
     }
