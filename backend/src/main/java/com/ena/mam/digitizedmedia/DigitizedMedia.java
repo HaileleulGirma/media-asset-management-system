@@ -4,6 +4,8 @@ import com.ena.mam.cassettecategory.CassetteCategory;
 import com.ena.mam.staffmember.StaffMember;
 import jakarta.persistence.*;
 
+import java.time.LocalDate;
+
 @Entity
 @Table(
         name = "digitized_media",
@@ -27,6 +29,9 @@ public class DigitizedMedia {
     @Column(name = "digitized_media_id")
     private Long digitizedMediaId;
 
+    @Column(name = "digitized_date")
+    private LocalDate digitizedDate;
+
     @Column(name = "file_path")
     private String filePath;
 
@@ -41,6 +46,9 @@ public class DigitizedMedia {
     @ManyToOne
     @JoinColumn(name = "imported_by")
     private StaffMember importer;
+
+    @Column(name = "private")
+    private Boolean isPrivate;
 
     @Version
     @Column(name = "version")
@@ -92,5 +100,21 @@ public class DigitizedMedia {
 
     public void setIdentifierNumber(Long identifierNumber) {
         this.identifierNumber = identifierNumber;
+    }
+
+    public Boolean getPrivate() {
+        return isPrivate;
+    }
+
+    public void setPrivate(Boolean aPrivate) {
+        isPrivate = aPrivate;
+    }
+
+    public LocalDate getDigitizedDate() {
+        return digitizedDate;
+    }
+
+    public void setDigitizedDate(LocalDate digitizedDate) {
+        this.digitizedDate = digitizedDate;
     }
 }
