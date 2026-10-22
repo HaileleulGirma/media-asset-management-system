@@ -3,22 +3,28 @@ package com.ena.mam.dto.request;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
-public record CreateDigitizedMediaRequest(
-        Long DigitizedMediaId,
-        @NotBlank(message = "Title is required")
-        String title,
+import java.time.LocalDate;
 
-        @NotBlank(message = "File path is required")
+public record CreateDigitizedMediaRequest(
+        Long digitizedMediaId,
+
+        @NotNull(message = "Digitized date is required.")
+        LocalDate digitizedDate,
+
+        @NotBlank(message = "File path is required.")
         String filePath,
 
-        @NotBlank(message = "Identifier Category Id is required.")
+        @NotNull(message = "Identifier Category Id is required.")
         Long identifierCategoryId,
 
         @NotNull(message = "Identifier number is required.")
         Long identifierNumber,
 
-        @NotNull(message = "Importer is required")
+        @NotNull(message = "Importer is required.")
         Long importedBy,
+
+        @NotNull(message = "Privacy status is required.")
+        Boolean isPrivate,
         Long version
 
 ) {
