@@ -22,12 +22,8 @@ public class CassetteCutSpecification {
                 );
     }
 
-    public static Specification<CassetteCut> hasCutDate(LocalDate cutDate) {
-        return (root, query, cb) ->
-                cb.equal(
-                        root.get("cutDate"),
-                        cutDate
-                );
+    public static Specification<CassetteCut> hasCassetteCutBetween(LocalDate startDate, LocalDate endDate){
+        return (root, query, cb) -> cb.between(root.get("cutDate"), startDate, endDate);
     }
 
     public static Specification<CassetteCut> hasSearchTerm(String searchTerm) {
