@@ -117,6 +117,7 @@ CREATE TABLE photo (
 
 CREATE TABLE digitized_media (
                                  digitized_media_id BIGINT GENERATED ALWAYS AS IDENTITY,
+                                 digitized_date DATE NOT NULL,
 
                                  identifier_category_id BIGINT NOT NULL,
                                  identifier_number INTEGER NOT NULL,
