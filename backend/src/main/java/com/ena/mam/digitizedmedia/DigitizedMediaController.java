@@ -14,6 +14,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
+
 @Slf4j
 @RestController
 public class DigitizedMediaController {
@@ -75,6 +77,8 @@ public class DigitizedMediaController {
     @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'VIEWER')")
     @GetMapping("/api/digitized-media")
     public Page<CreateDigitizedMediaResponse> search(
+            @RequestParam(required = false) LocalDate startDate,
+            @RequestParam(required = false) LocalDate endDate,
             @RequestParam(required = false) Long importerId,
             @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false) Long identifierNumber,
@@ -83,6 +87,8 @@ public class DigitizedMediaController {
             Pageable pageable
     ) {
         DigitizedMediaFilter filter = new DigitizedMediaFilter(
+                startDate,
+                endDate,
                 importerId,
                 categoryId,
                 identifierNumber
