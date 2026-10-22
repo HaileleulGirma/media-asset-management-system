@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cassettes — MAM</title>
+    <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+<div class="app-shell">
+    <div id="app-nav"></div>
+
+    <div class="main-content main-content--wide">
+
+        <!-- Tabs: Admin and Staff only. cassettes.js removes the tab bar and
+             the add/manage panels from the DOM for Viewers, who can only search. -->
+        <div class="tab-bar" id="tab-bar">
+            <button type="button" id="tab-search-btn" class="tab-btn">Search cuts</button>
+            <button type="button" id="tab-add-btn" class="tab-btn">Add cassette</button>
+            <button type="button" id="tab-manage-btn" class="tab-btn">Manage cassette &amp; cuts</button>
+            <button type="button" id="tab-summary-btn" class="tab-btn">Staff summary</button>
+        </div>
+
+        <!-- Add cassette (ADMIN + STAFF) -->
+        <div id="create-cassette-panel" class="panel hidden">
+            <h2>Add cassette</h2>
+            <p class="hint">The category and number identify the physical tape (its shelf label). After saving you can add its cuts right away.</p>
+
+            <div id="create-cassette-alert" class="alert"></div>
+
+            <form id="create-cassette-form" novalidate>
+                <div class="search-grid search-grid--two">
+
+                    <div class="search-col">
+                        <div class="field" data-field="identifierCategoryId">
+                            <label for="cassetteSeries">Cassette category</label>
+                            <select id="cassetteSeries" name="cassetteSeries">
+                                <option value="">Select category...</option>
+                            </select>
+                            <div class="field-error"></div>
+                        </div>
+
+                        <div class="field" data-field="identifierNumber">
+                            <label for="cassetteNumber">Cassette number</label>
+                            <input type="number" id="cassetteNumber" name="cassetteNumber" min="1" step="1" disabled />
+                            <div class="hint">Unlocks once a category is chosen.</div>
+                            <div class="field-error"></div>
+                        </div>
+
+                        <div class="field" data-field="filePath">
+                            <label for="cassetteFilePath">File path</label>
+                            <input type="text" id="cassetteFilePath" name="cassetteFilePath" required placeholder="/mnt/archive/cassettes/..." />
+                            <div class="field-error"></div>
+                        </div>
+                    </div>
+
+                    <div class="search-col">
+                        <div class="field" data-field="importedBy">
+                            <label for="cassetteImporter">Imported by</label>
+                            <select id="cassetteImporter" name="cassetteImporter" required>
+                                <option value="">Select staff member...</option>
+                            </select>
+                            <div class="field-error"></div>
+                        </div>
+
+                        <div class="field">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="cassettePrivate" />
+                                Private
+                            </label>
+                            <div class="hint">Private cassettes, and every cut inside them, are hidden from viewers.</div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <button type="submit" id="create-cassette-submit" class="btn btn-primary">Add cassette</button>
+                <button type="button" id="create-cassette-reset" class="btn btn-secondary">Clear form</button>
+            </form>
+        </div>
+
+        <!-- Search cuts (everyone) -->
+        <div id="search-cassette-panel" class="panel">
+            <h2>Search cuts</h2>
+
+            <div id="search-alert" class="alert"></div>
+
+            <form id="search-cassette-form" novalidate>
+                <div class="search-grid search-grid--two">
+
+                    <!-- Column 1: search-term builder -->
+                    <div class="search-col search-col-terms">
+                        <div class="field">
+                            <label>Search terms</label>
+
+                            <div class="term-type-selector" id="termTypeSelector">
+                                <button type="button" class="term-type-btn active" data-type="and">Must include</button>
+                                <button type="button" class="term-type-btn" data-type="or">Any of these</button>
+                                <button type="button" class="term-type-btn" data-type="not">Exclude</button>
+                            </div>
+
+                            <div class="term-input-row">
+                                <input type="text" id="searchTermInput" placeholder="Type a word or phrase, then press Enter or Add" />
+                                <button type="button" id="addTermBtn" class="btn btn-secondary">Add</button>
+                            </div>
+                            <div class="hint">Pick a type above, type a word or phrase, then Add. Multi-word entries are matched as an exact phrase.</div>
+
+                            <div class="chip-group">
+                                <span class="chip-group-label">Must include</span>
+                                <div id="mustIncludeChips" class="chip-row"></div>
+                            </div>
+                            <div class="chip-group">
+                                <span class="chip-group-label">Any of these</span>
+                                <div id="anyOfChips" class="chip-row"></div>
+                            </div>
+                            <div class="chip-group">
+                                <span class="chip-group-label">Exclude</span>
+                                <div id="excludeChips" class="chip-row"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Column 2: cut filters -->
+                    <div class="search-col">
+                        <div class="field">
+                            <label for="searchCutDate">On date</label>
+                            <input type="date" id="searchCutDate" name="searchCutDate" />
+                            <div class="hint">Cuts are searched by a single date.</div>
+                            <div class="field-error"></div>
+                        </div>
+
+                        <div class="field">
+                            <label for="searchCutCategory">Cut category</label>
+                            <select id="searchCutCategory">
+                                <option value="">Any category</option>
+                            </select>
+                        </div>
+                    </div>
+
+                </div>
+
+                <button type="submit" id="search-submit" class="btn btn-primary">Search</button>
+                <button type="button" id="search-reset" class="btn btn-secondary">Clear filters</button>
+            </form>
+        </div>
+
+        <!-- Manage cassette and its cuts (ADMIN + STAFF) -->
+        <div id="manage-cassette-panel" class="panel hidden">
+            <h2>Manage cassette &amp; cuts</h2>
+            <p class="hint">Choose the cassette's category, then enter its number. Its details and cuts appear below.</p>
+
+            <div id="manage-alert" class="alert"></div>
+
+            <div class="search-grid search-grid--two">
+                <div class="search-col">
+                    <div class="field">
+                        <label for="manageSeries">Cassette category</label>
+                        <select id="manageSeries">
+                            <option value="">Select category...</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="search-col">
+                    <div class="field">
+                        <label for="manageNumber">Cassette number</label>
+                        <input type="number" id="manageNumber" min="1" step="1" disabled />
+                        <div id="managePickerStatus" class="picker-status"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="cassette-detail" class="hidden">
+
+                <!-- The cassette itself -->
+                <div class="cassette-card">
+                    <div class="cassette-card-head">
+                        <h3 id="cassetteTitle"></h3>
+                        <span id="cassettePrivateBadge" class="private-badge hidden">Private</span>
+                    </div>
+                    <div id="cassetteMeta" class="hint"></div>
+
+                    <div id="edit-cassette-alert" class="alert"></div>
+
+                    <form id="edit-cassette-form" novalidate>
+                        <div class="search-grid search-grid--two">
+                            <div class="search-col">
+                                <div class="field" data-field="identifierCategoryId">
+                                    <label for="editCassetteSeries">Cassette category</label>
+                                    <select id="editCassetteSeries">
+                                        <option value="">Select category...</option>
+                                    </select>
+                                    <div class="field-error"></div>
+                                </div>
+                                <div class="field" data-field="identifierNumber">
+                                    <label for="editCassetteNumber">Cassette number</label>
+                                    <input type="number" id="editCassetteNumber" min="1" step="1" />
+                                    <div class="field-error"></div>
+                                </div>
+                                <div class="field" data-field="filePath">
+                                    <label for="editCassetteFilePath">File path</label>
+                                    <input type="text" id="editCassetteFilePath" />
+                                    <div class="field-error"></div>
+                                </div>
+                            </div>
+                            <div class="search-col">
+                                <div class="field" data-field="importedBy">
+                                    <label for="editCassetteImporter">Imported by</label>
+                                    <select id="editCassetteImporter">
+                                        <option value="">Select staff member...</option>
+                                    </select>
+                                    <div class="field-error"></div>
+                                </div>
+                                <div class="field">
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" id="editCassettePrivate" />
+                                        Private
+                                    </label>
+                                    <div id="privacyHint" class="hint"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="submit" id="edit-cassette-submit" class="btn btn-primary">Save cassette</button>
+                        <button type="button" id="delete-cassette-btn" class="btn btn-danger">Delete cassette</button>
+                    </form>
+                </div>
+
+                <!-- Its cuts -->
+                <div class="cuts-section">
+                    <h3>Cuts on this cassette <span id="cutCount" class="hint"></span></h3>
+
+                    <div id="cuts-alert" class="alert"></div>
+                    <div id="cuts-empty" class="empty-state hidden">No cuts yet. Add the first one below.</div>
+
+                    <table id="cuts-table" class="hidden">
+                        <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Cut date</th>
+                            <th>Cut category</th>
+                            <th>Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody id="cuts-body"></tbody>
+                    </table>
+
+                    <h3>Add a cut</h3>
+                    <div id="add-cut-alert" class="alert"></div>
+
+                    <form id="add-cut-form" novalidate>
+                        <div class="field" data-field="cutTitle">
+                            <label for="cutTitle">Cut title</label>
+                            <input type="text" id="cutTitle" required />
+                            <div class="field-error"></div>
+                        </div>
+
+                        <div class="field-row">
+                            <div class="field" data-field="cutDate">
+                                <label for="cutDate">Cut date (optional)</label>
+                                <input type="date" id="cutDate" />
+                                <div class="field-error"></div>
+                            </div>
+                            <div class="field" data-field="cassetteCategoryId">
+                                <label for="cutCategory">Cut category</label>
+                                <select id="cutCategory">
+                                    <option value="">Select category...</option>
+                                </select>
+                                <div class="hint">Starts as the cassette's category. Change it if this cut covers something else.</div>
+                                <div class="field-error"></div>
+                            </div>
+                        </div>
+
+                        <button type="submit" id="add-cut-submit" class="btn btn-primary">Add cut</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Staff summary (ADMIN + STAFF): cassettes imported per staff member -->
+        <div id="staff-summary-panel" class="panel hidden">
+            <h2>Staff summary</h2>
+            <p class="hint">Shows how many cassettes a staff member has imported. Cassettes do not record an import date, so this counts everything they have ever imported.</p>
+
+            <div class="field">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="summaryActiveOnly" checked />
+                    Active only
+                </label>
+                <div class="hint">Off shows only inactive staff.</div>
+            </div>
+
+            <div class="summary-search-row">
+                <div class="field">
+                    <label for="summaryStaffId">Staff member</label>
+                    <select id="summaryStaffId">
+                        <option value="">Select staff member...</option>
+                    </select>
+                    <div class="field-error"></div>
+                </div>
+                <button type="button" id="summaryLoadBtn" class="btn btn-primary">Load summary</button>
+            </div>
+
+            <div id="summary-alert" class="alert"></div>
+        </div>
+
+        <!-- Staff summary results modal (ADMIN + STAFF) -->
+        <div id="summary-results-overlay" class="modal-overlay hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="summary-modal-title">Staff summary</h2>
+                    <button type="button" id="summary-results-close" class="modal-close-btn" aria-label="Close">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div id="summary-modal-loading" class="empty-state">Loading...</div>
+                    <div id="summary-modal-empty" class="empty-state hidden">This staff member has not imported any cassettes.</div>
+
+                    <div id="summary-modal-content" class="hidden">
+                        <div class="summary-stats">
+                            <div class="summary-card">
+                                <div class="summary-card-label">Cassettes</div>
+                                <div class="summary-card-value" id="summaryCount">0</div>
+                                <div class="summary-card-sub">imported</div>
+                            </div>
+                            <div class="summary-card">
+                                <div class="summary-card-label">Private</div>
+                                <div class="summary-card-value" id="summaryPrivate">0</div>
+                                <div class="summary-card-sub">of those</div>
+                            </div>
+                            <div class="summary-card">
+                                <div class="summary-card-label">Categories</div>
+                                <div class="summary-card-value" id="summaryCategoryCount">0</div>
+                                <div class="summary-card-sub">covered</div>
+                            </div>
+                        </div>
+
+                        <div class="summary-section">
+                            <h3>By category</h3>
+                            <table id="summary-categories-table">
+                                <thead>
+                                <tr>
+                                    <th>Category</th>
+                                    <th>Cassettes</th>
+                                </tr>
+                                </thead>
+                                <tbody id="summary-categories-body"></tbody>
+                            </table>
+                        </div>
+
+                        <div class="summary-section">
+                            <h3>Cassettes imported</h3>
+                            <table id="summary-table">
+                                <thead>
+                                <tr>
+                                    <th>Cassette</th>
+                                    <th>File path</th>
+                                    <th>Visibility</th>
+                                    <th>Actions</th>
+                                </tr>
+                                </thead>
+                                <tbody id="summary-body"></tbody>
+                            </table>
+                            <div class="pagination">
+                                <button type="button" id="summary-prev" class="btn btn-secondary">Previous</button>
+                                <span id="summary-page-status"></span>
+                                <button type="button" id="summary-next" class="btn btn-secondary">Next</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Search results modal -->
+        <div id="search-results-overlay" class="modal-overlay hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Search results</h2>
+                    <button type="button" id="search-results-close" class="modal-close-btn" aria-label="Close">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div id="search-results-empty" class="empty-state">Run a search to see results.</div>
+                    <table id="search-results-table" class="hidden">
+                        <thead>
+                        <tr>
+                            <th>Cassette</th>
+                            <th>Cut title</th>
+                            <th>Cut date</th>
+                            <th>Cut category</th>
+                            <th>File path</th>
+                            <th id="results-actions-th">Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody id="search-results-body"></tbody>
+                    </table>
+
+                    <div id="search-pagination" class="pagination hidden">
+                        <button type="button" id="page-prev" class="btn btn-secondary">Previous</button>
+                        <span id="page-status"></span>
+                        <button type="button" id="page-next" class="btn btn-secondary">Next</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Edit cut modal (ADMIN + STAFF) -->
+        <div id="edit-cut-overlay" class="modal-overlay hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Edit cut</h2>
+                    <button type="button" id="edit-cut-close" class="modal-close-btn" aria-label="Close">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div id="edit-cut-alert" class="alert"></div>
+
+                    <form id="edit-cut-form" novalidate>
+                        <input type="hidden" id="editCutId" />
+
+                        <div class="field" data-field="cutTitle">
+                            <label for="editCutTitle">Cut title</label>
+                            <input type="text" id="editCutTitle" required />
+                            <div class="field-error"></div>
+                        </div>
+
+                        <div class="field-row">
+                            <div class="field" data-field="cutDate">
+                                <label for="editCutDate">Cut date (optional)</label>
+                                <input type="date" id="editCutDate" />
+                                <div class="field-error"></div>
+                            </div>
+                            <div class="field" data-field="cassetteCategoryId">
+                                <label for="editCutCategory">Cut category</label>
+                                <select id="editCutCategory">
+                                    <option value="">Select category...</option>
+                                </select>
+                                <div class="field-error"></div>
+                            </div>
+                        </div>
+
+                        <div class="modal-actions">
+                            <button type="submit" id="edit-cut-submit" class="btn btn-primary">Save changes</button>
+                            <button type="button" id="edit-cut-cancel" class="btn btn-secondary">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/nav.js"></script>
+<script src="/js/ethiopian-calendar.js"></script>
+<script src="/js/date-picker.js"></script>
+<script src="/js/cassettes.js"></script>
+</body>
+</html>
