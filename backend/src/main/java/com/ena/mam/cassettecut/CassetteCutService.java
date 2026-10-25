@@ -8,6 +8,7 @@ import com.ena.mam.dto.request.CreateCassetteCutRequest;
 import com.ena.mam.dto.request.filter.CassetteCutFilter;
 import com.ena.mam.dto.response.CreateCassetteCutResponse;
 import com.ena.mam.exception.ResourceNotFoundException;
+import com.ena.mam.util.SecurityUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -123,6 +124,18 @@ public class CassetteCutService {
             Pageable pageable) {
 
         Specification<CassetteCut> spec = Specification.allOf();
+
+        boolean canViewPrivate = SecurityUtils.canCurrentUserViewPrivateContent();
+
+        // Viewers cannot search private cuts.
+        if (!canViewPrivate) {
+            spec = spec.and(CassetteCutSpecification.isPublic());
+        } else if (filter.isPrivate() != null) {
+            // Staff and admins can request either privacy status.
+            spec = spec.and(
+                    CassetteCutSpecification.hasPrivacyStatus(filter.isPrivate())
+            );
+        }
 
         if (filter.digitizedMediaId() != null) {
             spec = spec.and(

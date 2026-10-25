@@ -81,6 +81,7 @@ public class CassetteCutController {
             @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false) LocalDate startDate,
             @RequestParam(required = false) LocalDate endDate,
+            @RequestParam(required = false) Boolean isPrivate,
             @RequestParam(required = false) String searchTerm,
             Authentication authentication,
             HttpServletRequest httpRequest,
@@ -91,6 +92,7 @@ public class CassetteCutController {
                 categoryId,
                 startDate,
                 endDate,
+                isPrivate,
                 searchTerm
         );
 

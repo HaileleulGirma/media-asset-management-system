@@ -7,6 +7,7 @@ public record CassetteCutFilter(
         Long categoryId,
         LocalDate startDate,
         LocalDate endDate,
+        Boolean isPrivate,
         String searchTerm
 ) {
     public LocalDate effectiveEndDate(){
