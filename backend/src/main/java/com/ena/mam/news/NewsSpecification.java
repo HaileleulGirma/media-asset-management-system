@@ -1,4 +1,5 @@
 package com.ena.mam.news;
+import com.ena.mam.util.WebSearchParser;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.Root;
 import jakarta.persistence.criteria.Subquery;
@@ -61,15 +62,21 @@ public class NewsSpecification {
                 cb.equal(root.get("isPrivate"), isPrivate);
     }
 
+//    public static Specification<News> hasSearchTerm(String searchTerm) {
+//        return (root, query, cb) ->
+//                cb.isTrue(
+//                        cb.function(
+//                                "fts_match",
+//                                Boolean.class,
+//                                root.get("title"),
+//                                cb.literal(searchTerm)
+//                        )
+//                );
+//    }
+
     public static Specification<News> hasSearchTerm(String searchTerm) {
         return (root, query, cb) ->
-                cb.isTrue(
-                        cb.function(
-                                "fts_match",
-                                Boolean.class,
-                                root.get("title"),
-                                cb.literal(searchTerm)
-                        )
-                );
+                WebSearchParser.buildWebSearchPredicate(searchTerm, root.<String>get("title"), cb);
     }
+
 }

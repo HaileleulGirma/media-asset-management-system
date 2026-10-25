@@ -12,13 +12,12 @@ import com.ena.mam.reporter.Reporter;
 import com.ena.mam.reporter.ReporterRepository;
 import com.ena.mam.staffmember.StaffMember;
 import com.ena.mam.staffmember.StaffMemberRepository;
+import com.ena.mam.util.SecurityUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -49,21 +48,6 @@ public class NewsService {
         this.newsMapper = newsMapper;
         this.staffMemberRepository = staffMemberRepository;
         this.locationRepository = locationRepository;
-    }
-
-    private boolean canViewPrivateNews() {
-        Authentication authentication =
-                SecurityContextHolder.getContext().getAuthentication();
-
-        if (authentication == null || !authentication.isAuthenticated()) {
-            return false;
-        }
-
-        return authentication.getAuthorities().stream()
-                .anyMatch(authority ->
-                        authority.getAuthority().equals("ROLE_ADMIN")
-                                || authority.getAuthority().equals("ROLE_STAFF")
-                );
     }
 
     @Transactional
@@ -147,8 +131,7 @@ public class NewsService {
     public Page<CreateNewsResponse> search(NewsFilter filter, Pageable pageable) {
 
         Specification<News> spec = Specification.allOf();
-
-        boolean canViewPrivate = canViewPrivateNews();
+        boolean canViewPrivate = SecurityUtils.canCurrentUserViewPrivateContent();
 
         // Viewers cannot search private news.
         if (!canViewPrivate) {
