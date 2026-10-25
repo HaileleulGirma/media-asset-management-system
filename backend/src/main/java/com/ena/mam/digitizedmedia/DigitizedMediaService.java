@@ -42,9 +42,8 @@ public class DigitizedMediaService {
                 )) {
 
             throw new DuplicateResourceException(
-                    "A Digitized Media with category ID %d and identifier number %d already exists."
+                    "A Digitized Media with identifier number %d already exists in this category."
                             .formatted(
-                                    request.identifierCategoryId(),
                                     request.identifierNumber()
                             )
             );
@@ -78,9 +77,8 @@ public class DigitizedMediaService {
                 )) {
 
             throw new DuplicateResourceException(
-                    "A Digitized Media with category ID %d and identifier number %d already exists."
+                    "A Digitized Media with identifier number %d already exists in this category."
                             .formatted(
-                                    request.identifierCategoryId(),
                                     request.identifierNumber()
                             )
             );
