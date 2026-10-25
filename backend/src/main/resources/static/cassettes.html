@@ -55,6 +55,13 @@
                     </div>
 
                     <div class="search-col">
+                        <div class="field" data-field="digitizedDate">
+                            <label for="cassetteDigitizedDate">Digitized date</label>
+                            <input type="date" id="cassetteDigitizedDate" name="cassetteDigitizedDate" />
+                            <div class="hint">The day the cassette was digitized.</div>
+                            <div class="field-error"></div>
+                        </div>
+
                         <div class="field" data-field="importedBy">
                             <label for="cassetteImporter">Imported by</label>
                             <select id="cassetteImporter" name="cassetteImporter" required>
@@ -123,9 +130,14 @@
                     <!-- Column 2: cut filters -->
                     <div class="search-col">
                         <div class="field">
-                            <label for="searchCutDate">On date</label>
-                            <input type="date" id="searchCutDate" name="searchCutDate" />
-                            <div class="hint">Cuts are searched by a single date.</div>
+                            <label for="searchStartDate">On / From date</label>
+                            <input type="date" id="searchStartDate" name="searchStartDate" />
+                            <div class="field-error"></div>
+                        </div>
+                        <div class="field">
+                            <label for="searchEndDate">To date (Optional)</label>
+                            <input type="date" id="searchEndDate" name="searchEndDate" />
+                            <div class="hint">Leave empty to search a single day. Enabled once a From date is chosen.</div>
                             <div class="field-error"></div>
                         </div>
 
@@ -203,6 +215,11 @@
                                 </div>
                             </div>
                             <div class="search-col">
+                                <div class="field" data-field="digitizedDate">
+                                    <label for="editCassetteDigitizedDate">Digitized date</label>
+                                    <input type="date" id="editCassetteDigitizedDate" />
+                                    <div class="field-error"></div>
+                                </div>
                                 <div class="field" data-field="importedBy">
                                     <label for="editCassetteImporter">Imported by</label>
                                     <select id="editCassetteImporter">
@@ -279,7 +296,7 @@
         <!-- Staff summary (ADMIN + STAFF): cassettes imported per staff member -->
         <div id="staff-summary-panel" class="panel hidden">
             <h2>Staff summary</h2>
-            <p class="hint">Shows how many cassettes a staff member has imported. Cassettes do not record an import date, so this counts everything they have ever imported.</p>
+            <p class="hint">Shows how many cassettes a staff member imported in a date range, counted by the day each cassette was digitized. Results open in a separate panel, same as Search.</p>
 
             <div class="field">
                 <label class="checkbox-label">
@@ -297,6 +314,16 @@
                     </select>
                     <div class="field-error"></div>
                 </div>
+                <div class="field">
+                    <label for="summaryStartDate">From date</label>
+                    <input type="date" id="summaryStartDate" />
+                    <div class="field-error"></div>
+                </div>
+                <div class="field">
+                    <label for="summaryEndDate">To date</label>
+                    <input type="date" id="summaryEndDate" />
+                    <div class="field-error"></div>
+                </div>
                 <button type="button" id="summaryLoadBtn" class="btn btn-primary">Load summary</button>
             </div>
 
@@ -312,7 +339,7 @@
                 </div>
                 <div class="modal-body">
                     <div id="summary-modal-loading" class="empty-state">Loading...</div>
-                    <div id="summary-modal-empty" class="empty-state hidden">This staff member has not imported any cassettes.</div>
+                    <div id="summary-modal-empty" class="empty-state hidden">This staff member has no imported cassettes in this range.</div>
 
                     <div id="summary-modal-content" class="hidden">
                         <div class="summary-stats">
@@ -352,6 +379,7 @@
                                 <thead>
                                 <tr>
                                     <th>Cassette</th>
+                                    <th>Digitized</th>
                                     <th>File path</th>
                                     <th>Visibility</th>
                                     <th>Actions</th>

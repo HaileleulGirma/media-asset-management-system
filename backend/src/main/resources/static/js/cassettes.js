@@ -29,7 +29,10 @@
     // Global GC/EC toggle + Ethiopian picker. Ids removed above for Viewers
     // are skipped by attach().
     DatePicker.mountToggle();
-    DatePicker.attachAll(["searchCutDate", "cutDate", "editCutDate"]);
+    DatePicker.attachAll([
+        "searchStartDate", "searchEndDate", "cutDate", "editCutDate",
+        "cassetteDigitizedDate", "editCassetteDigitizedDate", "summaryStartDate", "summaryEndDate",
+    ]);
 
     // ---------- Helpers ----------
 
@@ -48,6 +51,7 @@
             filePath: raw.filePath ?? "",
             categoryId: first(raw, ["identifierCategoryId"]),
             number: first(raw, ["identifierNumber"]),
+            digitizedDate: raw.digitizedDate ?? null,
             importerId: first(raw, ["importerId", "importedBy"]),
             isPrivate: first(raw, ["isPrivate", "private"]) === true,
             version: raw.version ?? null,
@@ -356,6 +360,7 @@
 
         function resetCreateForm() {
             form.reset();
+            DatePicker.refresh("cassetteDigitizedDate");
             syncCreateLock();
             clearFieldErrors(form);
         }
@@ -372,12 +377,18 @@
             hideAlert(alertEl);
             clearFieldErrors(form);
 
+            if (!$("cassetteDigitizedDate").value) {
+                setFieldError("cassetteDigitizedDate", "Digitized date is required.");
+                return;
+            }
+
             submitBtn.disabled = true;
             submitBtn.textContent = "Saving...";
 
             const payload = {
                 identifierCategoryId: numberOrNull($("cassetteSeries").value),
                 identifierNumber: numberOrNull($("cassetteNumber").value),
+                digitizedDate: $("cassetteDigitizedDate").value,
                 filePath: $("cassetteFilePath").value.trim(),
                 importedBy: numberOrNull($("cassetteImporter").value),
                 isPrivate: $("cassettePrivate").checked,
@@ -452,13 +463,16 @@
 
             $("cassetteTitle").textContent = cassetteLabel(cassette.categoryId, cassette.number);
             $("cassettePrivateBadge").classList.toggle("hidden", !cassette.isPrivate);
-            $("cassetteMeta").textContent = cassette.importerId != null && staffName(cassette.importerId)
-                ? "Imported by " + staffName(cassette.importerId)
-                : "";
+            const metaParts = [];
+            if (cassette.importerId != null && staffName(cassette.importerId)) metaParts.push("Imported by " + staffName(cassette.importerId));
+            if (cassette.digitizedDate) metaParts.push("Digitized " + cassette.digitizedDate);
+            $("cassetteMeta").textContent = metaParts.join(" · ");
 
             $("editCassetteSeries").value = String(cassette.categoryId ?? "");
             $("editCassetteNumber").value = cassette.number ?? "";
             $("editCassetteFilePath").value = cassette.filePath || "";
+            $("editCassetteDigitizedDate").value = cassette.digitizedDate || "";
+            DatePicker.refresh("editCassetteDigitizedDate");
             $("editCassettePrivate").checked = cassette.isPrivate;
 
             // The dropdown lists active staff. If the current importer is now
@@ -674,12 +688,18 @@
             clearFieldErrors(editCassetteForm);
             if (!currentCassette) return;
 
+            if (!$("editCassetteDigitizedDate").value) {
+                setFieldError("editCassetteDigitizedDate", "Digitized date is required.");
+                return;
+            }
+
             editCassetteSubmit.disabled = true;
             editCassetteSubmit.textContent = "Saving...";
 
             const payload = {
                 identifierCategoryId: numberOrNull($("editCassetteSeries").value),
                 identifierNumber: numberOrNull($("editCassetteNumber").value),
+                digitizedDate: $("editCassetteDigitizedDate").value,
                 filePath: $("editCassetteFilePath").value.trim(),
                 importedBy: numberOrNull($("editCassetteImporter").value),
                 isPrivate: $("editCassettePrivate").checked,
@@ -727,11 +747,13 @@
     }
 
     // ---------- Staff summary (ADMIN + STAFF) ----------
-    // How many cassettes a staff member has imported. A cassette records no
-    // import date, so this counts everything the person has ever imported.
+    // How many cassettes a staff member imported, counted by the day each
+    // cassette was digitized, within a required date range.
 
     if (canEdit) {
         const staffSelect = $("summaryStaffId");
+        const startInput = $("summaryStartDate");
+        const endInput = $("summaryEndDate");
         const activeOnlyBox = $("summaryActiveOnly");
         const loadBtn = $("summaryLoadBtn");
         const summaryAlert = $("summary-alert");
@@ -756,9 +778,40 @@
             fillFirstOptionSelect("summaryStaffId", activeOnlyBox.checked ? activeStaff : inactiveStaff, "staffMemberId", "staffMemberName");
         });
         staffSelect.addEventListener("change", () => setFieldError("summaryStaffId", null));
+        startInput.addEventListener("input", () => setFieldError("summaryStartDate", null));
+        endInput.addEventListener("input", () => setFieldError("summaryEndDate", null));
 
-        function openSummaryModal(staffLabel) {
-            title.textContent = staffLabel ? "Staff summary — " + staffLabel : "Staff summary";
+        // Staff member and both dates are required: a summary is always
+        // scoped to a range, never "all time".
+        function validateSummaryInputs(staffId, startDate, endDate) {
+            let valid = true;
+            setFieldError("summaryStaffId", null);
+            setFieldError("summaryStartDate", null);
+            setFieldError("summaryEndDate", null);
+
+            if (!staffId) {
+                setFieldError("summaryStaffId", "Please select a staff member.");
+                valid = false;
+            }
+            if (!startDate) {
+                setFieldError("summaryStartDate", "From date is required.");
+                valid = false;
+            }
+            if (!endDate) {
+                setFieldError("summaryEndDate", "To date is required.");
+                valid = false;
+            }
+            if (startDate && endDate && startDate > endDate) {
+                setFieldError("summaryStartDate", '"From date" cannot be later than "To date".');
+                setFieldError("summaryEndDate", '"From date" cannot be later than "To date".');
+                valid = false;
+            }
+            return valid;
+        }
+
+        function openSummaryModal(staffLabel, startDate, endDate) {
+            const range = startDate && endDate ? ` (${startDate} to ${endDate})` : "";
+            title.textContent = staffLabel ? "Staff summary — " + staffLabel + range : "Staff summary";
             overlay.classList.remove("hidden");
             loadingEl.classList.remove("hidden");
             emptyEl.classList.add("hidden");
@@ -774,12 +827,13 @@
             if (e.target === overlay) closeSummaryModal();
         });
 
-        // Pulls every page so the totals cover all of the person's cassettes.
-        async function fetchAllImported(staffId) {
+        // Pulls every page so the totals cover all of the person's cassettes
+        // in the range.
+        async function fetchAllImported(staffId, startDate, endDate) {
             const all = [];
             let page = 0;
             while (true) {
-                const params = new URLSearchParams({ importerId: staffId, page, size: 100 });
+                const params = new URLSearchParams({ importerId: staffId, startDate, endDate, page, size: 100 });
                 const result = await apiFetch(`${MEDIA_ENDPOINT}?${params.toString()}`);
                 const content = result.content || [];
                 all.push(...content.map(normCassette));
@@ -803,6 +857,7 @@
                 const row = document.createElement("tr");
                 row.innerHTML = `
                     <td>${escapeHtml(cassetteLabel(cassette.categoryId, cassette.number))}</td>
+                    <td>${cassette.digitizedDate ?? "—"}</td>
                     <td>${escapeHtml(cassette.filePath)}</td>
                     <td>${cassette.isPrivate ? '<span class="private-badge">Private</span>' : "Public"}</td>
                     <td><button type="button" class="btn btn-secondary btn-sm open-btn">Open</button></td>
@@ -867,20 +922,18 @@
 
         loadBtn.addEventListener("click", async () => {
             const staffId = staffSelect.value;
-            setFieldError("summaryStaffId", null);
+            const startDate = startInput.value;
+            const endDate = endInput.value;
             hideAlert(summaryAlert);
 
-            if (!staffId) {
-                setFieldError("summaryStaffId", "Please select a staff member.");
-                return;
-            }
+            if (!validateSummaryInputs(staffId, startDate, endDate)) return;
 
             loadBtn.disabled = true;
             loadBtn.textContent = "Loading...";
-            openSummaryModal(staffSelect.selectedOptions[0]?.textContent);
+            openSummaryModal(staffSelect.selectedOptions[0]?.textContent, startDate, endDate);
 
             try {
-                renderSummary(await fetchAllImported(staffId));
+                renderSummary(await fetchAllImported(staffId, startDate, endDate));
             } catch (err) {
                 closeSummaryModal();
                 showAlert(summaryAlert, "Could not load summary: " + (err.body?.message || err.message), "error");
@@ -907,9 +960,37 @@
     let currentPage = 0;
     let totalPages = 0;
 
+    const searchStartInput = $("searchStartDate");
+    const searchEndInput = $("searchEndDate");
+
+    function setDateRangeError(message) {
+        ["searchStartDate", "searchEndDate"].forEach((id) => setFieldError(id, message));
+    }
+
+    // "To date" only makes sense once "From date" is chosen.
+    function syncEndDateAvailability() {
+        const hasStart = Boolean(searchStartInput.value);
+        searchEndInput.disabled = !hasStart;
+        if (!hasStart) searchEndInput.value = "";
+    }
+
+    searchStartInput.addEventListener("input", () => {
+        setDateRangeError(null);
+        syncEndDateAvailability();
+    });
+    searchEndInput.addEventListener("input", () => setDateRangeError(null));
+    syncEndDateAvailability();
+
     searchForm.addEventListener("submit", (e) => {
         e.preventDefault();
         hideAlert(searchAlert);
+
+        if (searchStartInput.value && searchEndInput.value && searchStartInput.value > searchEndInput.value) {
+            setDateRangeError('"From date" cannot be later than "To date".');
+            return;
+        }
+        setDateRangeError(null);
+
         currentPage = 0;
         openResultsModal();
         runSearch();
@@ -917,7 +998,10 @@
 
     $("search-reset").addEventListener("click", () => {
         searchForm.reset();
-        DatePicker.refresh("searchCutDate");
+        DatePicker.refresh("searchStartDate");
+        DatePicker.refresh("searchEndDate");
+        setDateRangeError(null);
+        syncEndDateAvailability();
         clearTermPiles();
         hideAlert(searchAlert);
     });
@@ -1066,8 +1150,13 @@
         const searchTerm = buildSearchTerm();
         if (searchTerm) params.append("searchTerm", searchTerm);
 
-        const cutDate = $("searchCutDate").value;
-        if (cutDate) params.append("cutDate", cutDate);
+        // A single day is sent as a one-day range, so the backend's
+        // "between" filter always gets both ends.
+        const startDate = searchStartInput.value;
+        if (startDate) {
+            params.append("startDate", startDate);
+            params.append("endDate", searchEndInput.value || startDate);
+        }
 
         const cutCategory = $("searchCutCategory").value;
         if (cutCategory) params.append("categoryId", cutCategory);
