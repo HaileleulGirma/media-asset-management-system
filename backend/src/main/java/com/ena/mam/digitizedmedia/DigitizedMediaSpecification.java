@@ -1,5 +1,6 @@
 package com.ena.mam.digitizedmedia;
 
+import com.ena.mam.util.WebSearchParser;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.time.LocalDate;
@@ -13,7 +14,7 @@ public class DigitizedMediaSpecification {
     public static Specification<DigitizedMedia> hasImporterId(Long importerId) {
         return (root, query, cb) ->
                 cb.equal(
-                        root.get("importedBy").get("staffMemberId"),
+                        root.get("importer").get("staffMemberId"),
                         importerId
                 );
     }
@@ -36,13 +37,6 @@ public class DigitizedMediaSpecification {
 
     public static Specification<DigitizedMedia> hasSearchTerm(String searchTerm) {
         return (root, query, cb) ->
-                cb.isTrue(
-                        cb.function(
-                                "fts_match",
-                                Boolean.class,
-                                root.get("title"),
-                                cb.literal(searchTerm)
-                        )
-                );
+                WebSearchParser.buildWebSearchPredicate(searchTerm, root.<String>get("title"), cb);
     }
 }
