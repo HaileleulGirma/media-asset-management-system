@@ -6,8 +6,11 @@ import com.ena.mam.dto.request.CreatePhotoRequest;
 import com.ena.mam.dto.request.filter.PhotoFilter;
 import com.ena.mam.dto.response.CreatePhotoResponse;
 import com.ena.mam.exception.ResourceNotFoundException;
+import com.ena.mam.location.Location;
+import com.ena.mam.location.LocationRepository;
 import com.ena.mam.staffmember.StaffMember;
 import com.ena.mam.staffmember.StaffMemberRepository;
+import com.ena.mam.util.SecurityUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -27,17 +30,19 @@ public class PhotoService {
     private final PhotoMapper photoMapper;
     private final PhotoRepository photoRepository;
     private final CameramanRepository cameramanRepository;
+    private final LocationRepository locationRepository;
 
     public PhotoService(
             StaffMemberRepository staffMemberRepository,
             PhotoMapper photoMapper,
             PhotoRepository photoRepository,
-            CameramanRepository cameramanRepository
+            CameramanRepository cameramanRepository, LocationRepository locationRepository
     ) {
         this.staffMemberRepository = staffMemberRepository;
         this.photoMapper = photoMapper;
         this.photoRepository = photoRepository;
         this.cameramanRepository = cameramanRepository;
+        this.locationRepository = locationRepository;
     }
 
     @Transactional
@@ -53,7 +58,10 @@ public class PhotoService {
                         )
                 );
 
-        Photo photo = photoMapper.toPhoto(request, staffMember, cameramen);
+        Set<Location> locations =
+                new HashSet<>(locationRepository.findAllById(request.locations()));
+
+        Photo photo = photoMapper.toPhoto(request, staffMember, cameramen, locations);
 
         Photo savedPhoto = photoRepository.save(photo);
 
@@ -98,11 +106,15 @@ public class PhotoService {
         Set<Cameraman> cameramen =
                 new HashSet<>(cameramanRepository.findAllById(request.cameramanIds()));
 
+        Set<Location> locations =
+                new HashSet<>(locationRepository.findAllById(request.locations()));
+
         photoMapper.updatePhoto(
                 photo,
                 request,
                 staffMember,
-                cameramen
+                cameramen,
+                locations
         );
 
         Photo savedPhoto = photoRepository.save(photo);
@@ -122,6 +134,14 @@ public class PhotoService {
 
         Specification<Photo> spec = Specification.allOf();
 
+        boolean canViewPrivate = SecurityUtils.canCurrentUserViewPrivateContent();
+
+        if (!canViewPrivate) {
+            spec = spec.and(PhotoSpecification.isPublic());
+        } else if (filter.isPrivate() != null) {
+            spec = spec.and(PhotoSpecification.hasPrivacyStatus(filter.isPrivate()));
+        }
+
         if (filter.importerId() != null) {
             spec = spec.and(
                     PhotoSpecification.hasImporterId(
@@ -130,12 +150,10 @@ public class PhotoService {
             );
         }
 
-        if (filter.cameramanId() != null) {
-            spec = spec.and(
-                    PhotoSpecification.hasCameramanId(
-                            filter.cameramanId()
-                    )
-            );
+        if (filter.cameramanIds() != null && !filter.cameramanIds().isEmpty()) {
+            for (Long cameramanId : filter.cameramanIds()) {
+                spec = spec.and(PhotoSpecification.hasCameramanId(cameramanId));
+            }
         }
 
         if (filter.startDate() != null && filter.endDate() != null) {
@@ -145,6 +163,12 @@ public class PhotoService {
                             filter.effectiveEndDate()
                     )
             );
+        }
+
+        if (filter.locationIds() != null && !filter.locationIds().isEmpty()) {
+            for (Long locationId : filter.locationIds()) {
+                spec = spec.and(PhotoSpecification.hasLocation(locationId));
+            }
         }
 
         if (filter.searchTerm() != null && !filter.searchTerm().isBlank()) {

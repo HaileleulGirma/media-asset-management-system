@@ -15,6 +15,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.util.Set;
 
 @Slf4j
 @RestController
@@ -79,9 +80,11 @@ public class PhotoController {
     @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'VIEWER')")
     public Page<CreatePhotoResponse> search(
             @RequestParam(required = false) Long importerId,
-            @RequestParam(required = false) Long cameramanId,
+            @RequestParam(required = false) Set<Long> cameramanIds,
+            @RequestParam(required = false) Set<Long> locations,
             @RequestParam(required = false) LocalDate startDate,
             @RequestParam(required = false) LocalDate endDate,
+            @RequestParam(required = false) Boolean isPrivate,
             @RequestParam(required = false) String searchTerm,
             Authentication authentication,
             HttpServletRequest httpRequest,
@@ -89,9 +92,11 @@ public class PhotoController {
     ) {
         PhotoFilter filter = new PhotoFilter(
                 importerId,
-                cameramanId,
+                cameramanIds,
+                locations,
                 startDate,
                 endDate,
+                isPrivate,
                 searchTerm
         );
 
