@@ -6,6 +6,7 @@ import java.util.Set;
 public record CreatePhotoResponse(
         Long photoId,
         Set<Long> cameramen,
+        Set<Long> locations,
         String title,
         String filePath,
         Integer numberOfFiles,

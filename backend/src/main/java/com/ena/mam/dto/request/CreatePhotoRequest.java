@@ -12,6 +12,9 @@ public record CreatePhotoRequest(
         @NotEmpty(message = "At least one cameraman is required.")
         Set<Long> cameramanIds,
 
+        @NotEmpty(message = "At least one location is required.")
+        Set<Long> locations,
+
         @NotBlank(message = "Title is required")
         String title,
 
