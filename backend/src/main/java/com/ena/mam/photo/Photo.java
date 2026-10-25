@@ -1,6 +1,7 @@
 package com.ena.mam.photo;
 
 import com.ena.mam.cameraman.Cameraman;
+import com.ena.mam.location.Location;
 import com.ena.mam.staffmember.StaffMember;
 import jakarta.persistence.*;
 
@@ -45,6 +46,14 @@ public class Photo {
     @ManyToOne
     @JoinColumn(name = "imported_by")
     private StaffMember importer;
+
+    @ManyToMany
+    @JoinTable(
+            name = "photo_location",
+            joinColumns = @JoinColumn(name = "photo_id"),
+            inverseJoinColumns = @JoinColumn(name = "location_id")
+    )
+    private Set<Location> locations = new HashSet<>() ;
 
     @Version
     @Column(name = "version")
@@ -120,5 +129,13 @@ public class Photo {
 
     public void setCameramen(Set<Cameraman> cameramen) {
         this.cameramen = cameramen;
+    }
+
+    public Set<Location> getLocations() {
+        return locations;
+    }
+
+    public void setLocations(Set<Location> locations) {
+        this.locations = locations;
     }
 }
