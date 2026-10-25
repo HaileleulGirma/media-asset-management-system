@@ -7,4 +7,6 @@ public interface CassetteCategoryRepository extends
         JpaRepository<CassetteCategory, Long>,
         JpaSpecificationExecutor<CassetteCategory>
 {
+    boolean existsByCategoryNameIgnoreCase(String categoryName);
+    boolean existsByCategoryNameIgnoreCaseAndCategoryIdNot(String categoryName, Long categoryId);
 }

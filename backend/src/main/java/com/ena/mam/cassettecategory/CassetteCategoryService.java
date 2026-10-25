@@ -2,6 +2,7 @@ package com.ena.mam.cassettecategory;
 
 import com.ena.mam.dto.request.CreateCassetteCategoryRequest;
 import com.ena.mam.dto.response.CreateCassetteCategoryResponse;
+import com.ena.mam.exception.DuplicateResourceException;
 import com.ena.mam.exception.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,6 +21,11 @@ public class CassetteCategoryService {
 
     @Transactional
     public CreateCassetteCategoryResponse create(CreateCassetteCategoryRequest request){
+        if (categoryRepository.existsByCategoryNameIgnoreCase(request.categoryName())){
+            throw new DuplicateResourceException(
+                    "A category named '%s' already exists.".formatted(request.categoryName())
+            );
+        }
 
         CassetteCategory cassetteCategory = cassetteCategoryMapper.toCassette(request);
         CassetteCategory savedCassetteCategory = categoryRepository.save(cassetteCategory);
@@ -33,7 +39,11 @@ public class CassetteCategoryService {
             throw new IllegalArgumentException("Version number is required when updating cassette category.");
         }
 
-
+        if (categoryRepository.existsByCategoryNameIgnoreCaseAndCategoryIdNot(request.categoryName(), categoryId)){
+            throw new DuplicateResourceException(
+                    "Cassette category named '%s' already exists.".formatted(request.categoryName())
+            );
+        }
 
         CassetteCategory cassetteCategory = categoryRepository.findById(categoryId)
                 .orElseThrow(() -> new ResourceNotFoundException("Cassette category with id %d not found.".formatted(categoryId)));
