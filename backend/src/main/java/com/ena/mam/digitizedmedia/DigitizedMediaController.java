@@ -1,10 +1,12 @@
 package com.ena.mam.digitizedmedia;
 
+import com.ena.mam.cassettecut.CassetteExportService;
 import com.ena.mam.dto.request.CreateDigitizedMediaRequest;
 import com.ena.mam.dto.request.filter.DigitizedMediaFilter;
 import com.ena.mam.dto.response.CreateDigitizedMediaResponse;
 import com.ena.mam.util.ClientIpUtil;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -14,6 +16,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 
 @Slf4j
@@ -21,9 +24,11 @@ import java.time.LocalDate;
 public class DigitizedMediaController {
 
     private final DigitizedMediaService digitizedMediaService;
+    private final CassetteExportService cassetteExportService;
 
-    public DigitizedMediaController(DigitizedMediaService digitizedMediaService) {
+    public DigitizedMediaController(DigitizedMediaService digitizedMediaService, CassetteExportService cassetteExportService) {
         this.digitizedMediaService = digitizedMediaService;
+        this.cassetteExportService = cassetteExportService;
     }
 
     @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
@@ -102,5 +107,54 @@ public class DigitizedMediaController {
                 currentUsername, clientIp, httpRequest.getMethod(), rawQueryString, filter, pageable.getPageNumber());
 
         return digitizedMediaService.search(filter, pageable);
+    }
+
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    @GetMapping("/api/digitized-media/export/csv")
+    public void exportCsv(
+            @RequestParam(required = false) LocalDate startDate,
+            @RequestParam(required = false) LocalDate endDate,
+            @RequestParam(required = false) Long importerId,
+            Authentication authentication,
+            HttpServletRequest httpRequest,
+            HttpServletResponse response
+    ) throws Exception {
+        DigitizedMediaFilter filter = new DigitizedMediaFilter(startDate, endDate, importerId, null, null);
+
+        String currentUsername = (authentication != null) ? authentication.getName() : "SYSTEM";
+        log.info("AUDIT_EXPORT_CSV | Module: DIGITIZED_MEDIA | User: '{}' | IP: {} | Filter: {}",
+                currentUsername, ClientIpUtil.getClientIp(httpRequest), filter);
+
+        if (cassetteExportService.rejectIfTooLarge(cassetteExportService.countCassettes(filter), response)) return;
+
+        response.setContentType("text/csv; charset=UTF-8");
+        response.setCharacterEncoding(StandardCharsets.UTF_8.name());
+        response.setHeader("Content-Disposition", "attachment; filename=\"cassette_staff_summary.csv\"");
+        cassetteExportService.exportCassettesToCsv(filter, response.getWriter());
+    }
+
+// exportPdf: same pattern, @GetMapping("/api/digitized-media/export/pdf"),
+
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    @GetMapping("/api/digitized-media/export/pdf")
+    public void exportPdf(
+            @RequestParam(required = false) LocalDate startDate,
+            @RequestParam(required = false) LocalDate endDate,
+            @RequestParam(required = false) Long importerId,
+            Authentication authentication,
+            HttpServletRequest httpRequest,
+            HttpServletResponse response
+    ) throws Exception {
+        DigitizedMediaFilter filter = new DigitizedMediaFilter(startDate, endDate, importerId, null, null);
+
+        String currentUsername = (authentication != null) ? authentication.getName() : "SYSTEM";
+        log.info("AUDIT_EXPORT_PDF | Module: DIGITIZED_MEDIA | User: '{}' | IP: {} | Filter: {}",
+                currentUsername, ClientIpUtil.getClientIp(httpRequest), filter);
+
+        if (cassetteExportService.rejectIfTooLarge(cassetteExportService.countCassettes(filter), response)) return;
+
+        response.setContentType("application/pdf");
+        response.setHeader("Content-Disposition", "attachment; filename=\"cassette_staff_summary.pdf\"");
+        cassetteExportService.exportCassettesToPdf(filter, response.getOutputStream());
     }
 }

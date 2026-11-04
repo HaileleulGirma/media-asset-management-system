@@ -9,6 +9,7 @@ import com.ena.mam.exception.DuplicateResourceException;
 import com.ena.mam.exception.ResourceNotFoundException;
 import com.ena.mam.staffmember.StaffMember;
 import com.ena.mam.staffmember.StaffMemberRepository;
+import com.ena.mam.util.SecurityUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -113,6 +114,10 @@ public class DigitizedMediaService {
             Pageable pageable) {
 
         Specification<DigitizedMedia> spec = Specification.allOf();
+
+        if (!SecurityUtils.canCurrentUserViewPrivateContent()) {
+            spec = spec.and(DigitizedMediaSpecification.isPublic());
+        }
 
         if (filter.startDate() != null){
             spec = spec.and(
