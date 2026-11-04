@@ -28,6 +28,7 @@ public class PhotoMapper {
         photo.setNumberOfFiles(request.numberOfFiles());
         photo.setFileSizeMb(request.fileSizeMb());
         photo.setPhotoDate(request.photoDate());
+        photo.setPrivate(Boolean.TRUE.equals(request.isPrivate()));
         photo.setImporter(staffMember);
 
         return photo;
@@ -43,7 +44,8 @@ public class PhotoMapper {
                 photo.getNumberOfFiles(),
                 photo.getFileSizeMb(),
                 photo.getPhotoDate(),
-                photo.getImporter().getStaffMemberId(),
+                Boolean.TRUE.equals(photo.getPrivate()),
+                photo.getImporter() != null ? photo.getImporter().getStaffMemberId() : null,
                 photo.getVersion()
         );
     }
@@ -62,6 +64,7 @@ public class PhotoMapper {
         photo.setNumberOfFiles(request.numberOfFiles());
         photo.setFileSizeMb(request.fileSizeMb());
         photo.setPhotoDate(request.photoDate());
+        photo.setPrivate(Boolean.TRUE.equals(request.isPrivate()));
         photo.setImporter(staffMember);
     }
 }

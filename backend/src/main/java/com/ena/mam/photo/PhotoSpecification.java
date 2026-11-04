@@ -1,6 +1,8 @@
 package com.ena.mam.photo;
 
+import com.ena.mam.util.AmharicNormalizer;
 import com.ena.mam.util.WebSearchParser;
+import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.Root;
 import jakarta.persistence.criteria.Subquery;
@@ -20,12 +22,12 @@ public class PhotoSpecification {
 
     public static Specification<Photo> hasCameramanId(Long cameramanId) {
         return (root, query, cb) -> {
-            query.distinct(true);
-
-            return cb.equal(
-                    root.join("cameramen").get("cameramanId"),
-                    cameramanId
-            );
+            Subquery<Long> subquery = query.subquery(Long.class);
+            Root<Photo> subRoot = subquery.from(Photo.class);
+            Join<Object, Object> cameramen = subRoot.join("cameramen");
+            subquery.select(subRoot.get("photoId"))
+                    .where(cb.equal(cameramen.get("cameramanId"), cameramanId));
+            return root.get("photoId").in(subquery);
         };
     }
 
@@ -62,9 +64,12 @@ public class PhotoSpecification {
                 cb.isFalse(root.get("isPrivate"));
     }
 
-
     public static Specification<Photo> hasSearchTerm(String searchTerm) {
-        return (root, query, cb) ->
-                WebSearchParser.buildWebSearchPredicate(searchTerm, root.<String>get("title"), cb);
+        return (root, query, cb) -> {
+            String normalizedTerm = AmharicNormalizer.normalize(searchTerm);
+            Expression<String> indexedColumn = cb.function("amh_norm", String.class, root.get("title"));
+
+            return WebSearchParser.buildWebSearchPredicate(normalizedTerm, indexedColumn, cb);
+        };
     }
 }

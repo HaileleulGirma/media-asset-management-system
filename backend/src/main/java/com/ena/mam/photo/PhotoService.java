@@ -36,7 +36,8 @@ public class PhotoService {
             StaffMemberRepository staffMemberRepository,
             PhotoMapper photoMapper,
             PhotoRepository photoRepository,
-            CameramanRepository cameramanRepository, LocationRepository locationRepository
+            CameramanRepository cameramanRepository,
+            LocationRepository locationRepository
     ) {
         this.staffMemberRepository = staffMemberRepository;
         this.photoMapper = photoMapper;
@@ -54,8 +55,7 @@ public class PhotoService {
         StaffMember staffMember = staffMemberRepository
                 .findById(request.importedBy())
                 .orElseThrow(() ->
-                        new ResourceNotFoundException("Importer not found: " + request.importedBy()
-                        )
+                        new ResourceNotFoundException("Importer not found: " + request.importedBy())
                 );
 
         Set<Location> locations =
@@ -84,8 +84,7 @@ public class PhotoService {
                 .findById(photoId)
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
-                                "Photo with id %d not found."
-                                        .formatted(photoId)
+                                "Photo with id %d not found.".formatted(photoId)
                         )
                 );
 
@@ -99,8 +98,7 @@ public class PhotoService {
         StaffMember staffMember = staffMemberRepository
                 .findById(request.importedBy())
                 .orElseThrow(() ->
-                        new ResourceNotFoundException("Importer not found: " + request.importedBy()
-                        )
+                        new ResourceNotFoundException("Importer not found: " + request.importedBy())
                 );
 
         Set<Cameraman> cameramen =
@@ -144,9 +142,7 @@ public class PhotoService {
 
         if (filter.importerId() != null) {
             spec = spec.and(
-                    PhotoSpecification.hasImporterId(
-                            filter.importerId()
-                    )
+                    PhotoSpecification.hasImporterId(filter.importerId())
             );
         }
 
@@ -156,7 +152,7 @@ public class PhotoService {
             }
         }
 
-        if (filter.startDate() != null && filter.endDate() != null) {
+        if (filter.startDate() != null) {
             spec = spec.and(
                     PhotoSpecification.hasPhotoDateBetween(
                             filter.startDate(),
@@ -173,16 +169,17 @@ public class PhotoService {
 
         if (filter.searchTerm() != null && !filter.searchTerm().isBlank()) {
             spec = spec.and(
-                    PhotoSpecification.hasSearchTerm(
-                            filter.searchTerm()
-                    )
+                    PhotoSpecification.hasSearchTerm(filter.searchTerm())
             );
         }
 
         Pageable sortedPageable = PageRequest.of(
                 pageable.getPageNumber(),
                 pageable.getPageSize(),
-                Sort.by("photoId").descending()
+                Sort.by(
+                        Sort.Order.desc("photoDate"),
+                        Sort.Order.desc("photoId")
+                )
         );
 
         return photoRepository

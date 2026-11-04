@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Set;
 
@@ -27,10 +28,12 @@ public record CreatePhotoRequest(
 
         @NotNull(message = "File size is required")
         @Positive(message = "File size must be greater than zero")
-        Double fileSizeMb,
+        BigDecimal fileSizeMb,
 
         @NotNull(message = "Photo date is required")
         LocalDate photoDate,
+
+        Boolean isPrivate,
 
         @NotNull(message = "Importer is required")
         Long importedBy,

@@ -5,6 +5,7 @@ import com.ena.mam.location.Location;
 import com.ena.mam.staffmember.StaffMember;
 import jakarta.persistence.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.Set;
@@ -37,8 +38,8 @@ public class Photo {
     @Column(name = "number_of_files")
     private Integer numberOfFiles;
 
-    @Column(name = "file_size_mb")
-    private Double fileSizeMb;
+    @Column(name = "file_size_mb", nullable = false, precision = 12, scale = 2)
+    private BigDecimal fileSizeMb;
 
     @Column(name = "photo_date")
     private LocalDate photoDate;
@@ -58,6 +59,9 @@ public class Photo {
     @Version
     @Column(name = "version")
     private Long version;
+
+    @Column(name = "private")
+    private Boolean isPrivate;
 
     public Long getPhotoId() {
         return photoId;
@@ -91,11 +95,11 @@ public class Photo {
         this.numberOfFiles = numberOfFiles;
     }
 
-    public Double getFileSizeMb() {
+    public BigDecimal getFileSizeMb() {
         return fileSizeMb;
     }
 
-    public void setFileSizeMb(Double fileSizeMb) {
+    public void setFileSizeMb(BigDecimal fileSizeMb) {
         this.fileSizeMb = fileSizeMb;
     }
 
@@ -137,5 +141,13 @@ public class Photo {
 
     public void setLocations(Set<Location> locations) {
         this.locations = locations;
+    }
+
+    public Boolean getPrivate() {
+        return isPrivate;
+    }
+
+    public void setPrivate(Boolean aPrivate) {
+        isPrivate = aPrivate;
     }
 }
