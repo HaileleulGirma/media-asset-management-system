@@ -6,6 +6,7 @@ import com.ena.mam.reporter.Reporter;
 import com.ena.mam.staffmember.StaffMember;
 import jakarta.persistence.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.Set;
@@ -34,8 +35,8 @@ public class News {
     @Column(name = "number_of_files")
     private Integer numberOfFiles;
 
-    @Column(name = "total_size_gb")
-    private Double totalSize;
+    @Column(name = "total_size_gb", precision = 12, scale = 2)
+    private BigDecimal totalSize;
 
     @Column(name = "news_date")
     private LocalDate newsDate;
@@ -101,11 +102,11 @@ public class News {
         this.numberOfFiles = numberOfFiles;
     }
 
-    public Double getTotalSize() {
+    public BigDecimal getTotalSize() {
         return totalSize;
     }
 
-    public void setTotalSize(Double totalSize) {
+    public void setTotalSize(BigDecimal totalSize) {
         this.totalSize = totalSize;
     }
 

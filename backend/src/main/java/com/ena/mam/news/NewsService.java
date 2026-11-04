@@ -18,14 +18,24 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.HashSet;
 import java.util.Set;
 
 @Service
 public class NewsService {
+
+    // Staff may modify/delete news whose newsDate is within this many days of today.
+    // Older items can only be modified or deleted by an admin.
+    private static final int STAFF_EDIT_WINDOW_DAYS = 7;
+    private static final ZoneId ADDIS = ZoneId.of("Africa/Addis_Ababa");
 
     private final CameramanRepository cameramanRepository;
     private final ReporterRepository reporterRepository;
@@ -49,6 +59,30 @@ public class NewsService {
         this.staffMemberRepository = staffMemberRepository;
         this.locationRepository = locationRepository;
     }
+
+    // ---------- Edit-window gatekeeper ----------
+
+    private boolean isAdmin() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return auth != null && auth.getAuthorities().stream()
+                .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
+    }
+
+    private boolean withinStaffWindow(LocalDate date) {
+        if (date == null) return false;
+        LocalDate cutoff = LocalDate.now(ADDIS).minusDays(STAFF_EDIT_WINDOW_DAYS);
+        return !date.isBefore(cutoff);
+    }
+
+    private void assertCanModify(News news) {
+        if (isAdmin()) return;
+        if (!withinStaffWindow(news.getNewsDate())) {
+            throw new AccessDeniedException(
+                    "Only an admin can modify news older than " + STAFF_EDIT_WINDOW_DAYS + " days.");
+        }
+    }
+
+    // ---------- Create ----------
 
     @Transactional
     public CreateNewsResponse create(CreateNewsRequest request) {
@@ -77,6 +111,8 @@ public class NewsService {
         return newsMapper.toResponse(savedNews);
     }
 
+    // ---------- Update ----------
+
     @Transactional
     public CreateNewsResponse update(Long newsId, CreateNewsRequest request) {
         if (request.version() == null) {
@@ -85,6 +121,15 @@ public class NewsService {
 
         News news = newsRepository.findById(newsId)
                 .orElseThrow(() -> new ResourceNotFoundException("News with id %d not found.".formatted(newsId)));
+
+        // Gatekeeper: checked against the STORED date, before anything is mapped.
+        assertCanModify(news);
+
+        // Staff also cannot move an item to a date outside their own window.
+        if (!isAdmin() && !withinStaffWindow(request.newsDate())) {
+            throw new AccessDeniedException(
+                    "Only an admin can set a news date older than " + STAFF_EDIT_WINDOW_DAYS + " days.");
+        }
 
         // Explicitly verify the client is updating the latest version
         if (!news.getVersion().equals(request.version())) {
@@ -123,9 +168,17 @@ public class NewsService {
         return newsMapper.toResponse(savedNews);
     }
 
-    public void delete(Long newsId){
-        newsRepository.deleteById(newsId);
+    // ---------- Delete ----------
+
+    @Transactional
+    public void delete(Long newsId) {
+        News news = newsRepository.findById(newsId)
+                .orElseThrow(() -> new ResourceNotFoundException("News with id %d not found.".formatted(newsId)));
+        assertCanModify(news);
+        newsRepository.delete(news);
     }
+
+    // ---------- Search ----------
 
     @Transactional(readOnly = true)
     public Page<CreateNewsResponse> search(NewsFilter filter, Pageable pageable) {

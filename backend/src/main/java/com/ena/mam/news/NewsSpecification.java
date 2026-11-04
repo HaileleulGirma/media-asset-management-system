@@ -1,5 +1,7 @@
 package com.ena.mam.news;
+import com.ena.mam.util.AmharicNormalizer;
 import com.ena.mam.util.WebSearchParser;
+import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.Root;
 import jakarta.persistence.criteria.Subquery;
@@ -62,21 +64,23 @@ public class NewsSpecification {
                 cb.equal(root.get("isPrivate"), isPrivate);
     }
 
-//    public static Specification<News> hasSearchTerm(String searchTerm) {
-//        return (root, query, cb) ->
-//                cb.isTrue(
-//                        cb.function(
-//                                "fts_match",
-//                                Boolean.class,
-//                                root.get("title"),
-//                                cb.literal(searchTerm)
-//                        )
-//                );
-//    }
-
     public static Specification<News> hasSearchTerm(String searchTerm) {
-        return (root, query, cb) ->
-                WebSearchParser.buildWebSearchPredicate(searchTerm, root.<String>get("title"), cb);
+        return (root, query, cb) -> {
+
+            // 1. Normalize the Java string (e.g., "-ፀሎት" becomes "-ጸሎት")
+            String normalizedTerm = AmharicNormalizer.normalize(searchTerm);
+
+            // 2. Wrap the DB column so the query reads: amh_norm(title) ILIKE ...
+            // This ensures it perfectly hits your idx_news_title_trgm index!
+            Expression<String> indexedColumn = cb.function("amh_norm", String.class, root.get("title"));
+
+            // 3. Pass both to your existing parser without changing a single line of the parser
+            return WebSearchParser.buildWebSearchPredicate(
+                    normalizedTerm,
+                    indexedColumn,
+                    cb
+            );
+        };
     }
 
 }

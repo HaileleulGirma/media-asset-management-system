@@ -33,6 +33,7 @@ public class NewsMapper {
         news.setLocations(location);
         news.setNumberOfFiles(request.numberOfFiles());
         news.setTotalSize(request.totalSize());
+        news.setPrivate(Boolean.TRUE.equals(request.isPrivate()));
 
         return news;
     }
@@ -71,6 +72,7 @@ public class NewsMapper {
         news.setPrivate(request.isPrivate());
         news.setNumberOfFiles(request.numberOfFiles());
         news.setTotalSize(request.totalSize());
+        news.setPrivate(Boolean.TRUE.equals(request.isPrivate()));
 
         // Relationships
         news.setCameramen(cameramen);

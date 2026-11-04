@@ -1,5 +1,6 @@
 package com.ena.mam.dto.response;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Set;
 
@@ -26,7 +27,7 @@ public record CreateNewsResponse(
 
         Integer numberOfFiles,
 
-        Double totalSize,
+        BigDecimal totalSize,
 
         Long version
 ) {
