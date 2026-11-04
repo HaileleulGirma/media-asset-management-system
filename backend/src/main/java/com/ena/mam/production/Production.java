@@ -2,6 +2,7 @@ package com.ena.mam.production;
 
 import jakarta.persistence.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Entity
@@ -24,8 +25,8 @@ public class Production {
     @Column(name = "file_path")
     private String filePath;
 
-    @Column(name = "file_size_gb")
-    private Double fileSizeGb;
+    @Column(name = "file_size_gb", precision = 12, scale = 2)
+    private BigDecimal fileSizeGb;
 
     @Column(name = "production_duration_sec")
     private Integer productionDurationSec;
@@ -66,11 +67,11 @@ public class Production {
         this.filePath = filePath;
     }
 
-    public Double getFileSizeGb() {
+    public BigDecimal getFileSizeGb() {
         return fileSizeGb;
     }
 
-    public void setFileSizeGb(Double fileSizeGb) {
+    public void setFileSizeGb(BigDecimal fileSizeGb) {
         this.fileSizeGb = fileSizeGb;
     }
 

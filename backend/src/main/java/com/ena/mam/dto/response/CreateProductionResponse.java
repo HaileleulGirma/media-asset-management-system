@@ -1,5 +1,6 @@
 package com.ena.mam.dto.response;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 public record CreateProductionResponse(
@@ -7,7 +8,7 @@ public record CreateProductionResponse(
         LocalDate date,
         String title,
         String filePath,
-        Double fileSize,
+        BigDecimal fileSize,
         Integer durationSec,
         Long version
 ) {

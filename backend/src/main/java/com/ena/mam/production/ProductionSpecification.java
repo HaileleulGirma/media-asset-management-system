@@ -1,6 +1,8 @@
 package com.ena.mam.production;
 
+import com.ena.mam.util.AmharicNormalizer;
 import com.ena.mam.util.WebSearchParser;
+import jakarta.persistence.criteria.Expression;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.time.LocalDate;
@@ -11,7 +13,11 @@ public class ProductionSpecification {
     }
 
     public static Specification<Production> hasSearchTerm(String searchTerm) {
-        return (root, query, cb) ->
-                WebSearchParser.buildWebSearchPredicate(searchTerm, root.<String>get("title"), cb);
+        return (root, query, cb) -> {
+            String normalizedTerm = AmharicNormalizer.normalize(searchTerm);
+            Expression<String> indexedColumn = cb.function("amh_norm", String.class, root.get("title"));
+
+            return WebSearchParser.buildWebSearchPredicate(normalizedTerm, indexedColumn, cb);
+        };
     }
 }

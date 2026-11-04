@@ -3,6 +3,7 @@ package com.ena.mam.dto.request;
 import com.ena.mam.util.DurationUtils;
 import jakarta.validation.constraints.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 public record CreateProductionRequest(
@@ -18,7 +19,7 @@ public record CreateProductionRequest(
 
         @NotNull(message = "File size is required")
         @Positive(message = "File size must be greater than zero")
-        Double fileSizeGb,
+        BigDecimal fileSizeGb,
 
         @Min(value = 0, message = "Hours cannot be negative")
         Integer durationHours,
