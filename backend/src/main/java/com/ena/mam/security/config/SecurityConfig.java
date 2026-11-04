@@ -73,6 +73,13 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(auth -> auth
+                        // Allow OpenAPI and Swagger UI
+                        .requestMatchers(
+                                "/v3/api-docs/**",
+                                "/swagger-ui/**",
+                                "/swagger-ui.html"
+                        ).permitAll()
+                        // Your existing allowed endpoints
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/",
                                 "/index.html",
