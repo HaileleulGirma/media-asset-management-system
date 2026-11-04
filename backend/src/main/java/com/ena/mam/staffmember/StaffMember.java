@@ -11,32 +11,36 @@ public class StaffMember {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "staff_member_id")
+    @Column(name = "member_id")
     private Long staffMemberId;
 
-    @Column(name = "staff_member_name")
+    @Column(name = "member_name", nullable = false, unique = true)
     private String staffMemberName;
 
-    @Column(name = "is_active")
-    private Boolean isActive;
+    @Column(name = "is_active", nullable = false)
+    private boolean active;
 
     public Long getStaffMemberId() {
         return staffMemberId;
+    }
+
+    public void setStaffMemberId(Long staffMemberId) {
+        this.staffMemberId = staffMemberId;
     }
 
     public String getStaffMemberName() {
         return staffMemberName;
     }
 
-    public void setStaffMemberName(String memberName) {
-        this.staffMemberName = memberName;
+    public void setStaffMemberName(String staffMemberName) {
+        this.staffMemberName = staffMemberName;
     }
 
-    public Boolean getActive() {
-        return isActive;
+    public boolean isActive() {
+        return active;
     }
 
-    public void setActive(Boolean active) {
-        isActive = active;
+    public void setActive(boolean active) {
+        this.active = active;
     }
 }

@@ -19,7 +19,7 @@ public class StaffMemberMapper {
         return new CreateStaffMemberResponse(
                 staffMember.getStaffMemberId(),
                 staffMember.getStaffMemberName(),
-                staffMember.getActive()
+                staffMember.isActive()
                 );
     }
 }

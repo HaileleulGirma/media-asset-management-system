@@ -60,8 +60,8 @@ public class StaffMemberService {
     @Transactional(readOnly = true)
     public List<CreateStaffMemberResponse> findAll(Boolean activeOnly){
         List<StaffMember> staffMembers = (activeOnly != null && activeOnly)
-                ? staffMemberRepository.findByIsActiveTrue()
-                : staffMemberRepository.findByIsActiveFalse();
+                ? staffMemberRepository.findByActiveTrue()
+                : staffMemberRepository.findByActiveFalse();
 
         return staffMembers.stream()
                 .map(staffMemberMapper::toResponse)
