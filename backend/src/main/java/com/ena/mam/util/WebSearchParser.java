@@ -7,10 +7,16 @@ import org.hibernate.query.criteria.HibernateCriteriaBuilder;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class WebSearchParser {
 
     private static final int MIN_LEN = 2;
+
+    // A token is either an optionally negated "quoted phrase" or a bare run
+    // of non-space characters. Quoted phrases stay in one piece.
+    private static final Pattern TOKEN = Pattern.compile("-?\"[^\"]*\"|\\S+");
 
     public static Predicate buildWebSearchPredicate(
             String searchInput,
@@ -28,15 +34,18 @@ public class WebSearchParser {
         List<String> currentGroup = new ArrayList<>();
         boolean pendingOr = false;
 
-        for (String token : searchInput.trim().split("\\s+")) {
+        Matcher matcher = TOKEN.matcher(searchInput.trim());
+        while (matcher.find()) {
+            String token = matcher.group();
 
+            // Only a bare OR is the operator; a quoted "OR" is a normal term.
             if (token.equalsIgnoreCase("OR")) {
                 pendingOr = !currentGroup.isEmpty();
                 continue;
             }
 
             boolean negated = token.startsWith("-");
-            String word = negated ? token.substring(1) : token;
+            String word = clean(negated ? token.substring(1) : token);
 
             if (word.length() < MIN_LEN) {
                 continue; // pendingOr is left untouched on purpose
@@ -79,6 +88,11 @@ public class WebSearchParser {
         }
 
         return result.isEmpty() ? cb.conjunction() : cb.and(result.toArray(Predicate[]::new));
+    }
+
+    /** Strips surrounding quotes and collapses runs of spaces so a phrase is matched as typed. */
+    private static String clean(String s) {
+        return s.replaceAll("^\"+|\"+$", "").trim().replaceAll("\\s+", " ");
     }
 
     /** Makes %, _ and \ in user input literal instead of wildcards. */
