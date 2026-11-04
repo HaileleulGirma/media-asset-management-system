@@ -41,7 +41,7 @@ import java.util.function.Supplier;
  * against the schema, so this class does not depend on their entity classes.
  */
 @Component
-//@Profile("dev")
+@Profile("dev")
 public class DataSeeder implements CommandLineRunner {
 
     private static final ZoneId ADDIS = ZoneId.of("Africa/Addis_Ababa");
