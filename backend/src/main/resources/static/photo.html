@@ -31,7 +31,7 @@
             <form id="create-photo-form" novalidate>
                 <div class="search-grid">
 
-                    <!-- Column 1: title, date, path -->
+                    <!-- Column 1: title + basic metadata, paired up like news -->
                     <div class="search-col search-col-terms">
                         <div class="field" data-field="title">
                             <label for="title">Title</label>
@@ -51,38 +51,46 @@
                                 <div class="field-error"></div>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- Column 2: files, size, importer -->
-                    <div class="search-col">
-                        <div class="field" data-field="numberOfFiles">
-                            <label for="numberOfFiles">Number of files</label>
-                            <input type="number" id="numberOfFiles" name="numberOfFiles" min="1" step="1" required />
-                            <div class="field-error"></div>
-                        </div>
-
-                        <div class="field" data-field="fileSizeMb">
-                            <label for="fileSize">Total size</label>
-                            <div class="input-with-select">
-                                <input type="number" id="fileSize" name="fileSize" min="0" step="0.01" required />
-                                <select id="fileSizeUnit" name="fileSizeUnit">
-                                    <option value="MB" selected>MB</option>
-                                    <option value="GB">GB</option>
-                                </select>
+                        <div class="field-row">
+                            <div class="field" data-field="numberOfFiles">
+                                <label for="numberOfFiles">Number of files</label>
+                                <input type="number" id="numberOfFiles" name="numberOfFiles" min="1" step="1" required />
+                                <div class="field-error"></div>
                             </div>
-                            <div class="field-error"></div>
+                            <div class="field" data-field="fileSizeMb">
+                                <label for="fileSize">Total size</label>
+                                <div class="input-with-select">
+                                    <input type="number" id="fileSize" name="fileSize" min="0" step="0.01" required />
+                                    <select id="fileSizeUnit" name="fileSizeUnit">
+                                        <option value="MB" selected>MB</option>
+                                        <option value="GB">GB</option>
+                                    </select>
+                                </div>
+                                <div class="field-error"></div>
+                            </div>
                         </div>
 
-                        <div class="field" data-field="importedBy">
-                            <label for="importedBy">Imported by</label>
-                            <select id="importedBy" name="importedBy" required>
-                                <option value="">Select staff member...</option>
-                            </select>
-                            <div class="field-error"></div>
+                        <div class="field-row">
+                            <div class="field" data-field="importedBy">
+                                <label for="importedBy">Imported by</label>
+                                <select id="importedBy" name="importedBy" required>
+                                    <option value="">Select staff member...</option>
+                                </select>
+                                <div class="field-error"></div>
+                            </div>
+                            <div class="field" data-field="isPrivate" style="display: flex; flex-direction: column; justify-content: center;">
+                                <label class="checkbox-label" style="margin-top: 18px;">
+                                    <input type="checkbox" id="isPrivate" name="isPrivate" />
+                                    Is private
+                                </label>
+                                <div class="hint">Private photos are hidden from Viewers.</div>
+                                <div class="field-error"></div>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Column 3: cameramen -->
+                    <!-- Column 2: active-only + cameramen -->
                     <div class="search-col">
                         <div class="field">
                             <label class="checkbox-label">
@@ -96,6 +104,25 @@
                             <label for="cameramanIds">Cameramen</label>
                             <div id="cameramanChips" class="chip-row"></div>
                             <select id="cameramanIds" name="cameramanIds" multiple></select>
+                            <div class="hint">At least one is required. Hold Ctrl (Cmd on Mac) to select multiple.</div>
+                            <div class="field-error"></div>
+                        </div>
+                    </div>
+
+                    <!-- Column 3: locations -->
+                    <div class="search-col">
+                        <div class="field">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="createAbroadOnly" />
+                                Is abroad
+                            </label>
+                            <div class="hint">Off shows local locations, on shows abroad.</div>
+                        </div>
+
+                        <div class="field" data-field="locations">
+                            <label for="locationIds">Locations</label>
+                            <div id="locationChips" class="chip-row"></div>
+                            <select id="locationIds" name="locations" multiple></select>
                             <div class="hint">At least one is required. Hold Ctrl (Cmd on Mac) to select multiple.</div>
                             <div class="field-error"></div>
                         </div>
@@ -117,7 +144,7 @@
             <form id="search-photo-form" novalidate>
                 <div class="search-grid">
 
-                    <!-- Column 1: search-term builder -->
+                    <!-- Column 1: search-term builder + date range + visibility -->
                     <div class="search-col search-col-terms">
                         <div class="field">
                             <label>Search terms</label>
@@ -147,46 +174,65 @@
                                 <div id="excludeChips" class="chip-row"></div>
                             </div>
                         </div>
+
+                        <div class="field-row">
+                            <div class="field">
+                                <label for="startDate">On / From date</label>
+                                <input type="date" id="startDate" name="startDate" />
+                                <div class="field-error"></div>
+                            </div>
+                            <div class="field">
+                                <label for="endDate">To date (Optional)</label>
+                                <input type="date" id="endDate" name="endDate" />
+                                <div class="hint">Leave empty to search a single day. Enabled once a From date is chosen.</div>
+                                <div class="field-error"></div>
+                            </div>
+                        </div>
+
+                        <!-- Removed for Viewers by photo.js (privacy filter is not theirs to see) -->
+                        <div class="field" id="searchPrivacyField">
+                            <label for="searchIsPrivate">Visibility</label>
+                            <select id="searchIsPrivate">
+                                <option value="">All</option>
+                                <option value="false">Public only</option>
+                                <option value="true">Private only</option>
+                            </select>
+                        </div>
                     </div>
 
-                    <!-- Column 2: date range -->
-                    <div class="search-col">
-                        <div class="field">
-                            <label for="startDate">On / From date</label>
-                            <input type="date" id="startDate" name="startDate" />
-                            <div class="field-error"></div>
-                        </div>
-                        <div class="field">
-                            <label for="endDate">To date (Optional)</label>
-                            <input type="date" id="endDate" name="endDate" />
-                            <div class="hint">Leave empty to search a single day. Enabled once a From date is chosen.</div>
-                            <div class="field-error"></div>
-                        </div>
-                    </div>
-
-                    <!-- Column 3: cameraman + importer filters -->
+                    <!-- Column 2: active-only + cameramen -->
                     <div class="search-col">
                         <div class="field">
                             <label class="checkbox-label">
                                 <input type="checkbox" id="searchActiveOnly" checked />
                                 Active only
                             </label>
-                            <div class="hint">Off shows only inactive cameramen and staff — useful for older photos.</div>
+                            <div class="hint">Off shows only inactive cameramen — useful for older photos.</div>
                         </div>
 
                         <div class="field" id="searchCameramanField">
-                            <label for="searchCameramanId">Cameraman</label>
-                            <select id="searchCameramanId">
-                                <option value="">Any cameraman</option>
-                            </select>
+                            <label for="searchCameramanIds">Cameramen</label>
+                            <div id="searchCameramanChips" class="chip-row"></div>
+                            <select id="searchCameramanIds" name="cameramanIds" multiple></select>
+                            <div class="hint">Hold Ctrl (Cmd on Mac) to select multiple.</div>
+                        </div>
+                    </div>
+
+                    <!-- Column 3: locations, on its own -->
+                    <div class="search-col">
+                        <div class="field">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="searchAbroadOnly" />
+                                Is abroad
+                            </label>
+                            <div class="hint">Off shows local locations, on shows abroad.</div>
                         </div>
 
-                        <!-- Removed for Viewers by photo.js (staff list is not theirs to see) -->
-                        <div class="field" id="searchImporterField">
-                            <label for="searchImporterId">Imported by</label>
-                            <select id="searchImporterId">
-                                <option value="">Any staff member</option>
-                            </select>
+                        <div class="field" id="searchLocationField">
+                            <label for="searchLocationIds">Locations</label>
+                            <div id="searchLocationChips" class="chip-row"></div>
+                            <select id="searchLocationIds" name="locations" multiple></select>
+                            <div class="hint">Hold Ctrl (Cmd on Mac) to select multiple.</div>
                         </div>
                     </div>
 
@@ -218,9 +264,11 @@
                     <th>Date</th>
                     <th>Title</th>
                     <th>Cameramen</th>
+                    <th>Locations</th>
                     <th>File path</th>
                     <th>Files</th>
                     <th>Size (MB)</th>
+                    <th>Privacy</th>
                     <th>Imported by</th>
                     <th>Actions</th>
                 </tr>
@@ -274,6 +322,14 @@
                     <button type="button" id="search-results-close" class="modal-close-btn" aria-label="Close">&times;</button>
                 </div>
                 <div class="modal-body">
+                    <!-- Export errors show here, inside the modal, so they are not hidden behind it -->
+                    <div id="search-modal-alert" class="alert"></div>
+
+                    <div id="search-export-actions" class="modal-actions hidden" style="justify-content: flex-start; margin-top: 0; margin-bottom: 16px;">
+                        <button type="button" id="export-csv-btn" class="btn btn-secondary">Export to CSV</button>
+                        <button type="button" id="export-pdf-btn" class="btn btn-secondary">Export to PDF</button>
+                    </div>
+
                     <div id="search-results-empty" class="empty-state">Run a search to see results.</div>
                     <table id="search-results-table" class="hidden">
                         <thead>
@@ -281,9 +337,12 @@
                             <th>Date</th>
                             <th>Title</th>
                             <th>Cameramen</th>
+                            <th>Locations</th>
                             <th>File path</th>
                             <th>Files</th>
                             <th>Size (MB)</th>
+                            <!-- Removed from the DOM for Viewers by photo.js -->
+                            <th id="search-privacy-th">Privacy</th>
                         </tr>
                         </thead>
                         <tbody id="search-results-body"></tbody>
@@ -312,6 +371,13 @@
                     <div id="summary-modal-empty" class="empty-state hidden">This staff member has no imported photos in this range.</div>
 
                     <div id="summary-modal-content" class="hidden">
+                        <div id="summary-modal-alert" class="alert"></div>
+
+                        <div class="modal-actions" style="justify-content: flex-start; margin-top: 0; margin-bottom: 16px;">
+                            <button type="button" id="summary-export-csv-btn" class="btn btn-secondary">Export to CSV</button>
+                            <button type="button" id="summary-export-pdf-btn" class="btn btn-secondary">Export to PDF</button>
+                        </div>
+
                         <div class="summary-stats">
                             <div class="summary-card">
                                 <div class="summary-card-label">Photo items</div>
@@ -338,9 +404,11 @@
                                     <th>Date</th>
                                     <th>Title</th>
                                     <th>Cameramen</th>
+                                    <th>Locations</th>
                                     <th>File path</th>
                                     <th>Files</th>
                                     <th>Size (MB)</th>
+                                    <th>Privacy</th>
                                 </tr>
                                 </thead>
                                 <tbody id="summary-body"></tbody>
@@ -407,25 +475,50 @@
                             </div>
                         </div>
 
-                        <div class="field" data-field="importedBy">
-                            <label for="editImportedBy">Imported by</label>
-                            <select id="editImportedBy">
-                                <option value="">Select staff member...</option>
-                            </select>
-                            <div class="field-error"></div>
+                        <div class="field-row">
+                            <div class="field" data-field="importedBy">
+                                <label for="editImportedBy">Imported by</label>
+                                <select id="editImportedBy">
+                                    <option value="">Select staff member...</option>
+                                </select>
+                                <div class="field-error"></div>
+                            </div>
+                            <div class="field" data-field="isPrivate" style="display: flex; flex-direction: column; justify-content: center;">
+                                <label class="checkbox-label" style="margin-top: 18px;">
+                                    <input type="checkbox" id="editIsPrivate" />
+                                    Is private
+                                </label>
+                                <div class="field-error"></div>
+                            </div>
                         </div>
 
-                        <div class="field">
-                            <label class="checkbox-label">
-                                <input type="checkbox" id="editActiveOnly" checked />
-                                Active cameramen only
-                            </label>
+                        <div class="field-row">
+                            <div class="field">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="editActiveOnly" checked />
+                                    Active cameramen only
+                                </label>
+                            </div>
+                            <div class="field">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="editAbroadOnly" />
+                                    Is abroad
+                                </label>
+                            </div>
                         </div>
 
                         <div class="field" data-field="cameramanIds">
                             <label for="editCameramanIds">Cameramen</label>
                             <div id="editCameramanChips" class="chip-row"></div>
                             <select id="editCameramanIds" multiple></select>
+                            <div class="hint">At least one is required. Hold Ctrl (Cmd on Mac) to select multiple.</div>
+                            <div class="field-error"></div>
+                        </div>
+
+                        <div class="field" data-field="locations">
+                            <label for="editLocationIds">Locations</label>
+                            <div id="editLocationChips" class="chip-row"></div>
+                            <select id="editLocationIds" multiple></select>
                             <div class="hint">At least one is required. Hold Ctrl (Cmd on Mac) to select multiple.</div>
                             <div class="field-error"></div>
                         </div>

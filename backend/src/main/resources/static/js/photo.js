@@ -10,14 +10,14 @@
         if (el) el.remove();
     }
 
-    // Viewers can only search. The tab bar, add/modify panels, edit modal and
-    // the staff filter are removed from the DOM (not just hidden), so there is
-    // nothing to un-hide. Display convenience only -- the server enforces
-    // access via @PreAuthorize.
+    // Viewers can only search public photos. The tab bar, add/modify panels,
+    // edit modal, staff/privacy filters, and the privacy table column header
+    // are removed from the DOM (not just hidden).
     if (!isAdminOrStaff) {
         [
             "tab-bar", "create-photo-panel", "modify-photo-panel", "staff-summary-panel",
             "edit-photo-overlay", "summary-results-overlay", "searchImporterField",
+            "searchPrivacyField", "searchStaffPrivacyRow", "search-privacy-th",
         ].forEach(removeById);
     }
 
@@ -102,6 +102,13 @@
             .join(", ") || "—";
     }
 
+    // Renders the Private/Public badge using style.css's .private-badge and .badge-inactive
+    function renderPrivacyBadge(isPrivate) {
+        return isPrivate
+            ? '<span class="private-badge">Private</span>'
+            : '<span class="badge-inactive">Public</span>';
+    }
+
     // Keeps the first (placeholder) option and replaces the rest.
     function fillFirstOptionSelect(selectId, items, idField, labelField) {
         const select = document.getElementById(selectId);
@@ -115,7 +122,65 @@
         });
     }
 
-    // ---------- Multi-select with chips (cameramen) ----------
+    // ---------- Export download (shared by Search and Staff Summary) ----------
+    // Fetches /api/photos/export/{csv|pdf} with the given filter params and
+    // saves the response as a file. Errors are shown in the given alert element.
+
+    async function downloadExport(format, params, btnEl, defaultLabel, alertEl, filenameBase) {
+        const url = `${PHOTO_ENDPOINT}/export/${format}?${params.toString()}`;
+
+        if (btnEl) {
+            btnEl.disabled = true;
+            btnEl.textContent = "Exporting...";
+        }
+
+        try {
+            const headers = {};
+            const token = (typeof Auth !== "undefined" && typeof Auth.getToken === "function" && Auth.getToken())
+                || localStorage.getItem("token")
+                || localStorage.getItem("jwt")
+                || sessionStorage.getItem("token");
+            if (token) {
+                headers["Authorization"] = token.startsWith("Bearer ") ? token : `Bearer ${token}`;
+            }
+
+            const res = await fetch(url, {
+                method: "GET",
+                headers,
+                credentials: "same-origin",
+            });
+
+            if (!res.ok) {
+                let message = `Export failed (HTTP ${res.status})`;
+                // 422 = over the export limit; the server explains how many matched.
+                if (res.status === 422) {
+                    try {
+                        message = (await res.json()).message || message;
+                    } catch (_) { /* keep the generic message */ }
+                }
+                throw new Error(message);
+            }
+
+            const blob = await res.blob();
+            const downloadUrl = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = downloadUrl;
+            a.download = `${filenameBase}.${format}`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(downloadUrl);
+        } catch (err) {
+            showAlert(alertEl, "Could not export results: " + (err.message || "Unknown error"), "error");
+        } finally {
+            if (btnEl) {
+                btnEl.disabled = false;
+                btnEl.textContent = defaultLabel;
+            }
+        }
+    }
+
+    // ---------- Multi-select with chips (cameramen + locations) ----------
     // Null-safe: for Viewers the create/edit elements do not exist.
 
     function makeMultiSelectController(selectId, chipsId) {
@@ -187,7 +252,7 @@
             ids() {
                 return Array.from(selected.keys()).map(Number);
             },
-            // Unknown ids still get a chip ("#12") so a cameraman missing
+            // Unknown ids still get a chip ("#12") so an item missing
             // from the name map is never silently dropped on save.
             setIds(idsArray, mapObj) {
                 selected.clear();
@@ -199,18 +264,24 @@
         };
     }
 
+    const searchCameramanController = makeMultiSelectController("searchCameramanIds", "searchCameramanChips");
     const createCameramanController = makeMultiSelectController("cameramanIds", "cameramanChips");
     const editCameramanController = makeMultiSelectController("editCameramanIds", "editCameramanChips");
 
-    // ---------- Reference data (cameramen + staff) ----------
-    // Both active and inactive are loaded: names of inactive people are still
-    // needed to display old photos, and the "Active only" toggles pick which
-    // list a dropdown shows. Staff data is Admin/Staff only; if Viewers
-    // cannot read cameramen either, the cameraman filter is just hidden.
+    const searchLocationController = makeMultiSelectController("searchLocationIds", "searchLocationChips");
+    const createLocationController = makeMultiSelectController("locationIds", "locationChips");
+    const editLocationController = makeMultiSelectController("editLocationIds", "editLocationChips");
 
-    const nameMaps = { cameramen: {}, staff: {} };
+    // ---------- Reference data (cameramen + locations + staff) ----------
+    // Both active/inactive (and local/abroad) are loaded: names of inactive
+    // people and both location types are needed to display results, while
+    // the toggles pick which subset a select currently shows.
+
+    const nameMaps = { cameramen: {}, locations: {}, staff: {} };
     let activeCameramen = [];
     let inactiveCameramen = [];
+    let localLocations = [];
+    let abroadLocations = [];
     let activeStaff = [];
     let inactiveStaff = [];
 
@@ -218,6 +289,10 @@
     const createActiveOnly = document.getElementById("createActiveOnly");   // null for Viewers
     const editActiveOnly = document.getElementById("editActiveOnly");       // null for Viewers
     const summaryActiveOnly = document.getElementById("summaryActiveOnly"); // null for Viewers
+
+    const searchAbroadOnly = document.getElementById("searchAbroadOnly");
+    const createAbroadOnly = document.getElementById("createAbroadOnly");   // null for Viewers
+    const editAbroadOnly = document.getElementById("editAbroadOnly");       // null for Viewers
 
     function valueOrEmpty(result) {
         return result && result.status === "fulfilled" && Array.isArray(result.value) ? result.value : [];
@@ -227,22 +302,28 @@
         const calls = [
             apiFetch("/api/cameraman?activeOnly=true"),
             apiFetch("/api/cameraman?activeOnly=false"),
+            apiFetch("/api/location?abroadOnly=false"),
+            apiFetch("/api/location?abroadOnly=true"),
         ];
         if (isAdminOrStaff) {
             calls.push(apiFetch("/api/staffmember?activeOnly=true"));
             calls.push(apiFetch("/api/staffmember?activeOnly=false"));
         }
-        const [camActive, camInactive, staffActive, staffInactive] = await Promise.allSettled(calls);
+        const [camActive, camInactive, locLocal, locAbroad, staffActive, staffInactive] = await Promise.allSettled(calls);
 
         activeCameramen = valueOrEmpty(camActive);
         inactiveCameramen = valueOrEmpty(camInactive);
+        localLocations = valueOrEmpty(locLocal);
+        abroadLocations = valueOrEmpty(locAbroad);
         activeStaff = valueOrEmpty(staffActive);
         inactiveStaff = valueOrEmpty(staffInactive);
 
         [...activeCameramen, ...inactiveCameramen].forEach((c) => (nameMaps.cameramen[c.cameramanId] = c.cameramanName));
+        [...localLocations, ...abroadLocations].forEach((l) => (nameMaps.locations[l.locationId] = l.locationName));
         [...activeStaff, ...inactiveStaff].forEach((s) => (nameMaps.staff[s.staffMemberId] = s.staffMemberName));
 
         const camFailed = camActive.status === "rejected" && camInactive.status === "rejected";
+        const locFailed = locLocal.status === "rejected" && locAbroad.status === "rejected";
         const staffFailed = isAdminOrStaff && staffActive.status === "rejected" && staffInactive.status === "rejected";
 
         if (camFailed) {
@@ -253,24 +334,42 @@
                 removeById("searchCameramanField");
             }
         }
+        if (locFailed) {
+            if (isAdminOrStaff) {
+                const err = locLocal.reason;
+                showAlert(searchAlert, "Could not load locations: " + (err?.body?.message || err?.message), "error");
+            } else {
+                removeById("searchLocationField");
+            }
+        }
         if (staffFailed) {
             const err = staffActive.reason;
             showAlert(searchAlert, "Could not load staff: " + (err?.body?.message || err?.message), "error");
         }
 
-        fillSearchLists();
+        fillSearchPeopleLists();
+        fillSearchLocations();
         if (isAdminOrStaff) {
             fillCreateStaff();
             fillCreateCameramen();
+            fillCreateLocations();
             fillEditCameramen();
+            fillEditLocations();
             fillSummaryStaff();
         }
     }
 
-    function fillSearchLists() {
+    function fillSearchPeopleLists() {
         const activeOnly = searchActiveOnly.checked;
-        fillFirstOptionSelect("searchCameramanId", activeOnly ? activeCameramen : inactiveCameramen, "cameramanId", "cameramanName");
+        searchCameramanController.fillSelect(activeOnly ? activeCameramen : inactiveCameramen, "cameramanId", "cameramanName");
+        searchCameramanController.renderChips();
         fillFirstOptionSelect("searchImporterId", activeOnly ? activeStaff : inactiveStaff, "staffMemberId", "staffMemberName");
+    }
+
+    function fillSearchLocations() {
+        if (!searchAbroadOnly) return;
+        searchLocationController.fillSelect(searchAbroadOnly.checked ? abroadLocations : localLocations, "locationId", "locationName");
+        searchLocationController.renderChips();
     }
 
     function fillCreateStaff() {
@@ -283,10 +382,22 @@
         createCameramanController.renderChips();
     }
 
+    function fillCreateLocations() {
+        if (!createAbroadOnly) return;
+        createLocationController.fillSelect(createAbroadOnly.checked ? abroadLocations : localLocations, "locationId", "locationName");
+        createLocationController.renderChips();
+    }
+
     function fillEditCameramen() {
         if (!editActiveOnly) return;
         editCameramanController.fillSelect(editActiveOnly.checked ? activeCameramen : inactiveCameramen, "cameramanId", "cameramanName");
         editCameramanController.renderChips();
+    }
+
+    function fillEditLocations() {
+        if (!editAbroadOnly) return;
+        editLocationController.fillSelect(editAbroadOnly.checked ? abroadLocations : localLocations, "locationId", "locationName");
+        editLocationController.renderChips();
     }
 
     // Staff dropdown for the summary: active or inactive staff per the toggle,
@@ -299,10 +410,13 @@
         if (Array.from(select.options).some((o) => o.value === previous)) select.value = previous;
     }
 
-    searchActiveOnly.addEventListener("change", fillSearchLists);
+    searchActiveOnly.addEventListener("change", fillSearchPeopleLists);
+    if (searchAbroadOnly) searchAbroadOnly.addEventListener("change", fillSearchLocations);
     if (summaryActiveOnly) summaryActiveOnly.addEventListener("change", fillSummaryStaff);
     if (createActiveOnly) createActiveOnly.addEventListener("change", fillCreateCameramen);
+    if (createAbroadOnly) createAbroadOnly.addEventListener("change", fillCreateLocations);
     if (editActiveOnly) editActiveOnly.addEventListener("change", fillEditCameramen);
+    if (editAbroadOnly) editAbroadOnly.addEventListener("change", fillEditLocations);
 
     loadReferenceData();
 
@@ -318,7 +432,9 @@
             DatePicker.refresh("photoDate");
             clearFieldErrors(createForm);
             createCameramanController.clear();
+            createLocationController.clear();
             fillCreateCameramen();
+            fillCreateLocations();
         }
 
         document.getElementById("create-photo-reset").addEventListener("click", () => {
@@ -333,14 +449,18 @@
             submitBtn.disabled = true;
             submitBtn.textContent = "Saving...";
 
+            const isPrivateCheckbox = document.getElementById("isPrivate");
+
             const payload = {
                 cameramanIds: createCameramanController.ids(),
+                locations: createLocationController.ids(),
                 title: document.getElementById("title").value.trim(),
                 filePath: document.getElementById("filePath").value.trim(),
                 numberOfFiles: numberOrNull(document.getElementById("numberOfFiles").value),
                 fileSizeMb: sizeToMb("fileSize", "fileSizeUnit"),
                 photoDate: document.getElementById("photoDate").value || null,
                 importedBy: numberOrNull(document.getElementById("importedBy").value),
+                isPrivate: isPrivateCheckbox ? isPrivateCheckbox.checked : false,
             };
 
             try {
@@ -421,9 +541,11 @@
                     <td>${item.photoDate ?? ""}</td>
                     <td>${escapeHtml(item.title ?? "")}</td>
                     <td>${namesFor(item.cameramen, nameMaps.cameramen)}</td>
+                    <td>${namesFor(item.locations, nameMaps.locations)}</td>
                     <td>${escapeHtml(item.filePath ?? "")}</td>
                     <td>${item.numberOfFiles ?? ""}</td>
                     <td>${formatSize(item.fileSizeMb)}</td>
+                    <td>${renderPrivacyBadge(item.isPrivate)}</td>
                     <td>${importerName}</td>
                     <td>
                         <div class="row-actions">
@@ -467,6 +589,9 @@
             document.getElementById("editFileSize").value = item.fileSizeMb != null ? item.fileSizeMb : "";
             document.getElementById("editFileSizeUnit").value = "MB";
 
+            const editIsPrivate = document.getElementById("editIsPrivate");
+            if (editIsPrivate) editIsPrivate.checked = Boolean(item.isPrivate);
+
             // Importer dropdown lists active staff; if this photo was
             // imported by someone who is now inactive, add them so the
             // current value is not lost on save.
@@ -480,10 +605,12 @@
             }
             importerSelect.value = item.importedBy != null ? String(item.importedBy) : "";
 
-            // Reset restored the toggle to "active only"; sync the list to it,
-            // then mark this photo's cameramen (inactive ones still get chips).
+            // Reset restored the toggles to default ("active only" and "local");
+            // sync the lists to them, then mark this photo's cameramen and locations.
             fillEditCameramen();
+            fillEditLocations();
             editCameramanController.setIds(item.cameramen ? Array.from(item.cameramen) : [], nameMaps.cameramen);
+            editLocationController.setIds(item.locations ? Array.from(item.locations) : [], nameMaps.locations);
         }
 
         function closeEditModal() {
@@ -504,15 +631,18 @@
             editSubmitBtn.textContent = "Saving...";
 
             const id = document.getElementById("editPhotoId").value;
+            const editIsPrivate = document.getElementById("editIsPrivate");
 
             const payload = {
                 cameramanIds: editCameramanController.ids(),
+                locations: editLocationController.ids(),
                 title: document.getElementById("editTitle").value.trim(),
                 filePath: document.getElementById("editFilePath").value.trim(),
                 numberOfFiles: numberOrNull(document.getElementById("editNumberOfFiles").value),
                 fileSizeMb: sizeToMb("editFileSize", "editFileSizeUnit"),
                 photoDate: document.getElementById("editPhotoDate").value || null,
                 importedBy: numberOrNull(document.getElementById("editImportedBy").value),
+                isPrivate: editIsPrivate ? editIsPrivate.checked : false,
                 version: currentEditVersion,
             };
 
@@ -556,10 +686,29 @@
         const summaryPrev = document.getElementById("summary-prev");
         const summaryNext = document.getElementById("summary-next");
 
+        // Export buttons + alert live inside the summary modal, so an export
+        // error is visible (the panel's own alert sits behind the modal).
+        const summaryModalAlert = document.getElementById("summary-modal-alert");
+        const summaryExportCsvBtn = document.getElementById("summary-export-csv-btn");
+        const summaryExportPdfBtn = document.getElementById("summary-export-pdf-btn");
+
         // Full list for the current staff member/range, fetched once.
         // Totals come from it; the table is a client-side page into it.
         let summaryItems = [];
         let summaryPage = 0;
+
+        // The filters of the summary currently on screen, so the export
+        // matches it exactly even if the inputs change behind the modal.
+        let summaryExportParams = null;
+
+        function exportSummary(format, btn, label) {
+            if (!summaryExportParams) return;
+            hideAlert(summaryModalAlert);
+            downloadExport(format, new URLSearchParams(summaryExportParams), btn, label, summaryModalAlert, "staff_summary");
+        }
+
+        summaryExportCsvBtn.addEventListener("click", () => exportSummary("csv", summaryExportCsvBtn, "Export to CSV"));
+        summaryExportPdfBtn.addEventListener("click", () => exportSummary("pdf", summaryExportPdfBtn, "Export to PDF"));
 
         function setSummaryFieldError(inputId, message) {
             const field = document.getElementById(inputId).closest(".field");
@@ -607,6 +756,7 @@
             summaryLoading.classList.remove("hidden");
             summaryEmpty.classList.add("hidden");
             summaryContent.classList.add("hidden");
+            hideAlert(summaryModalAlert);
         }
 
         function closeSummaryModal() {
@@ -660,9 +810,11 @@
                     <td>${item.photoDate ?? ""}</td>
                     <td>${escapeHtml(item.title ?? "")}</td>
                     <td>${namesFor(item.cameramen, nameMaps.cameramen)}</td>
+                    <td>${namesFor(item.locations, nameMaps.locations)}</td>
                     <td>${escapeHtml(item.filePath ?? "")}</td>
                     <td>${item.numberOfFiles ?? ""}</td>
                     <td>${formatSize(item.fileSizeMb)}</td>
+                    <td>${renderPrivacyBadge(item.isPrivate)}</td>
                 `;
                 summaryBody.appendChild(row);
             });
@@ -720,6 +872,9 @@
 
             if (!validateSummaryInputs(staffId, startDate, endDate)) return;
 
+            // Remember exactly what this summary was loaded with, for export.
+            summaryExportParams = new URLSearchParams({ importerId: staffId, startDate, endDate });
+
             hideAlert(summaryAlert);
             summaryLoadBtn.disabled = true;
             summaryLoadBtn.textContent = "Loading...";
@@ -737,7 +892,7 @@
         });
     }
 
-    // ---------- Search (everyone) ----------
+    // ---------- Search & Export (everyone) ----------
 
     const searchForm = document.getElementById("search-photo-form");
     const resetBtn = document.getElementById("search-reset");
@@ -748,6 +903,13 @@
     const pageStatus = document.getElementById("page-status");
     const prevBtn = document.getElementById("page-prev");
     const nextBtn = document.getElementById("page-next");
+
+    // Export errors show in this alert inside the results modal; the
+    // panel's own alert (searchAlert) sits behind the modal and goes unseen.
+    const searchModalAlert = document.getElementById("search-modal-alert");
+    const exportActions = document.getElementById("search-export-actions");
+    const exportCsvBtn = document.getElementById("export-csv-btn");
+    const exportPdfBtn = document.getElementById("export-pdf-btn");
 
     let currentPage = 0;
     let totalPages = 0;
@@ -798,9 +960,12 @@
         DatePicker.refresh("startDate");
         DatePicker.refresh("endDate");
         setDateRangeError(null);
+        searchCameramanController.clear();
+        searchLocationController.clear();
         clearTermPiles();
         syncEndDateAvailability();
-        fillSearchLists();
+        fillSearchPeopleLists();
+        fillSearchLocations();
     });
 
     resultsCloseBtn.addEventListener("click", closeResultsModal);
@@ -823,6 +988,8 @@
         resultsEmpty.classList.remove("hidden");
         resultsTable.classList.add("hidden");
         paginationEl.classList.add("hidden");
+        if (exportActions) exportActions.classList.add("hidden");
+        hideAlert(searchModalAlert);
     }
 
     function closeResultsModal() {
@@ -942,7 +1109,7 @@
         return parts.join(" ").trim();
     }
 
-    async function runSearch() {
+    function buildFilterQueryParams() {
         const params = new URLSearchParams();
 
         const searchTerm = buildSearchTerm();
@@ -951,12 +1118,32 @@
         if (startDateInput.value) params.append("startDate", startDateInput.value);
         if (endDateInput.value) params.append("endDate", endDateInput.value);
 
-        const cameramanSelect = document.getElementById("searchCameramanId");
-        if (cameramanSelect && cameramanSelect.value) params.append("cameramanId", cameramanSelect.value);
+        searchCameramanController.ids().forEach((id) => params.append("cameramanIds", id));
+        searchLocationController.ids().forEach((id) => params.append("locations", id));
 
         const importerSelect = document.getElementById("searchImporterId");   // null for Viewers
         if (importerSelect && importerSelect.value) params.append("importerId", importerSelect.value);
 
+        const privacySelect = document.getElementById("searchIsPrivate");     // null for Viewers
+        if (privacySelect && privacySelect.value !== "") params.append("isPrivate", privacySelect.value);
+
+        return params;
+    }
+
+    function triggerExport(format, btnEl, defaultLabel) {
+        hideAlert(searchModalAlert);
+        return downloadExport(format, buildFilterQueryParams(), btnEl, defaultLabel, searchModalAlert, "photos_export");
+    }
+
+    if (exportCsvBtn) {
+        exportCsvBtn.addEventListener("click", () => triggerExport("csv", exportCsvBtn, "Export to CSV"));
+    }
+    if (exportPdfBtn) {
+        exportPdfBtn.addEventListener("click", () => triggerExport("pdf", exportPdfBtn, "Export to PDF"));
+    }
+
+    async function runSearch() {
+        const params = buildFilterQueryParams();
         params.append("page", currentPage);
         params.append("size", PAGE_SIZE);
 
@@ -968,6 +1155,7 @@
             resultsEmpty.classList.remove("hidden");
             resultsTable.classList.add("hidden");
             paginationEl.classList.add("hidden");
+            if (exportActions) exportActions.classList.add("hidden");
         }
     }
 
@@ -979,22 +1167,27 @@
             resultsEmpty.classList.remove("hidden");
             resultsTable.classList.add("hidden");
             paginationEl.classList.add("hidden");
+            if (exportActions) exportActions.classList.add("hidden");
             return;
         }
 
         resultsEmpty.classList.add("hidden");
         resultsTable.classList.remove("hidden");
+        if (exportActions) exportActions.classList.remove("hidden");
 
         resultsBody.innerHTML = "";
         page.content.forEach((item) => {
+            const privacyCell = isAdminOrStaff ? `<td>${renderPrivacyBadge(item.isPrivate)}</td>` : "";
             const row = document.createElement("tr");
             row.innerHTML = `
                 <td>${item.photoDate ?? ""}</td>
                 <td>${escapeHtml(item.title ?? "")}</td>
                 <td>${namesFor(item.cameramen, nameMaps.cameramen)}</td>
+                <td>${namesFor(item.locations, nameMaps.locations)}</td>
                 <td>${escapeHtml(item.filePath ?? "")}</td>
                 <td>${item.numberOfFiles ?? ""}</td>
                 <td>${formatSize(item.fileSizeMb)}</td>
+                ${privacyCell}
             `;
             resultsBody.appendChild(row);
         });

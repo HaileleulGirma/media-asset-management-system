@@ -2,8 +2,12 @@
     const NEWS_ENDPOINT = "/api/news";
     const MB_PER_GB = 1024;
     const PAGE_SIZE = 20;
+    // Must match STAFF_EDIT_WINDOW_DAYS in NewsService.java. Display only;
+    // the server is what actually enforces it.
+    const STAFF_EDIT_WINDOW_DAYS = 7;
 
-    const isAdminOrStaff = Auth.hasRole("ADMIN") || Auth.hasRole("STAFF");
+    const isAdmin = Auth.hasRole("ADMIN");
+    const isAdminOrStaff = isAdmin || Auth.hasRole("STAFF");
     const createPanel = document.getElementById("create-news-panel");
     const searchPanel = document.getElementById("search-news-panel");
     const modifyPanel = document.getElementById("modify-news-panel");
@@ -19,6 +23,42 @@
 
     const nameMaps = { reporters: {}, cameramen: {}, locations: {}, staff: {} };
 
+    function removeById(id) {
+        const el = document.getElementById(id);
+        if (el) el.remove();
+    }
+
+    // Viewers only ever see public news, so the visibility filter and the
+    // privacy column are removed from the DOM (not just hidden). Display
+    // convenience only -- the server enforces access and pins viewers to
+    // public news.
+    if (!isAdminOrStaff) {
+        ["searchPrivacyField", "search-privacy-th"].forEach(removeById);
+    }
+
+    // Renders the Private/Public badge using style.css's .private-badge and .badge-inactive
+    function renderPrivacyBadge(isPrivate) {
+        return isPrivate
+            ? '<span class="private-badge">Private</span>'
+            : '<span class="badge-inactive">Public</span>';
+    }
+
+    // Oldest newsDate (YYYY-MM-DD, local time) a staff member may still modify.
+    function staffCutoffDate() {
+        const d = new Date();
+        d.setDate(d.getDate() - STAFF_EDIT_WINDOW_DAYS);
+        const pad = (n) => String(n).padStart(2, "0");
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    }
+
+    // True when a non-admin may not edit/delete this item (older than the window,
+    // or no date at all). Mirrors NewsService.withinStaffWindow.
+    function isLockedForCurrentUser(item) {
+        if (isAdmin) return false;
+        if (!item.newsDate) return true;
+        return item.newsDate < staffCutoffDate();
+    }
+
     // Global GC/EC calendar toggle (top nav) + wraps every date field on
     // this page with the Ethiopian picker. The native inputs stay the
     // source of truth (always Gregorian "YYYY-MM-DD"), so every other
@@ -28,6 +68,64 @@
         "newsDate", "startDate", "endDate", "modifySearchDate",
         "editNewsDate", "summaryStartDate", "summaryEndDate"
     ]);
+
+    // ---------- Export download (shared by Search and Staff Summary) ----------
+    // Fetches /api/news/export/{csv|pdf} with the given filter params and
+    // saves the response as a file. Errors are shown in the given alert element.
+
+    async function downloadExport(format, params, btnEl, defaultLabel, alertEl, filenameBase) {
+        const url = `${NEWS_ENDPOINT}/export/${format}?${params.toString()}`;
+
+        if (btnEl) {
+            btnEl.disabled = true;
+            btnEl.textContent = "Exporting...";
+        }
+
+        try {
+            const headers = {};
+            const token = (typeof Auth !== "undefined" && typeof Auth.getToken === "function" && Auth.getToken())
+                || localStorage.getItem("token")
+                || localStorage.getItem("jwt")
+                || sessionStorage.getItem("token");
+            if (token) {
+                headers["Authorization"] = token.startsWith("Bearer ") ? token : `Bearer ${token}`;
+            }
+
+            const res = await fetch(url, {
+                method: "GET",
+                headers,
+                credentials: "same-origin",
+            });
+
+            if (!res.ok) {
+                let message = `Export failed (HTTP ${res.status})`;
+                // 422 = over the export limit; the server explains how many matched.
+                if (res.status === 422) {
+                    try {
+                        message = (await res.json()).message || message;
+                    } catch (_) { /* keep the generic message */ }
+                }
+                throw new Error(message);
+            }
+
+            const blob = await res.blob();
+            const downloadUrl = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = downloadUrl;
+            a.download = `${filenameBase}.${format}`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(downloadUrl);
+        } catch (err) {
+            showAlert(alertEl, "Could not export results: " + (err.message || "Unknown error"), "error");
+        } finally {
+            if (btnEl) {
+                btnEl.disabled = false;
+                btnEl.textContent = defaultLabel;
+            }
+        }
+    }
 
     function showTab(tab) {
         const showAdd = tab === "add" && isAdminOrStaff;
@@ -353,6 +451,7 @@
                 totalSize: finalSize,
                 importerId: numberOrNull(document.getElementById("importerId").value),
                 ingestorId: numberOrNull(document.getElementById("ingestorId").value),
+                isPrivate: document.getElementById("isPrivate").checked,
                 reporterIds: createReporterController.ids(),
                 cameramanIds: createCameramanController.ids(),
                 locationIds: createLocationController.ids(),
@@ -419,6 +518,8 @@
         // Imported by / Ingested by so missing-ingestor items are easy to
         // spot at a glance (a news item can exist without an ingestor,
         // since ingestion always happens after import).
+        // Rows older than the staff edit window show "Admin only" instead of
+        // Edit/Delete for non-admins (display only; the server enforces it).
         function renderModifyResults(items) {
             modifyResultsBody.innerHTML = "";
             if (items.length === 0) {
@@ -437,6 +538,14 @@
                     ? escapeHtml(nameMaps.staff[item.ingestorId] || "")
                     : '<span class="badge-missing">Not ingested</span>';
 
+                const locked = isLockedForCurrentUser(item);
+                const actionsCell = locked
+                    ? '<span class="hint">Admin only</span>'
+                    : `<div class="row-actions">
+                            <button type="button" class="btn btn-secondary btn-sm edit-btn">Edit</button>
+                            <button type="button" class="btn btn-danger btn-sm delete-btn">Delete</button>
+                        </div>`;
+
                 const row = document.createElement("tr");
                 row.innerHTML = `
                     <td>${item.newsDate ?? ""}</td>
@@ -447,18 +556,16 @@
                     <td>${escapeHtml(item.filePath ?? "")}</td>
                     <td>${item.numberOfFiles ?? ""}</td>
                     <td>${item.totalSize != null ? item.totalSize.toFixed(2) : ""}</td>
+                    <td>${renderPrivacyBadge(item.isPrivate)}</td>
                     <td>${importerName}</td>
                     <td>${ingestorCell}</td>
-                    <td>
-                        <div class="row-actions">
-                            <button type="button" class="btn btn-secondary btn-sm edit-btn">Edit</button>
-                            <button type="button" class="btn btn-danger btn-sm delete-btn">Delete</button>
-                        </div>
-                    </td>
+                    <td>${actionsCell}</td>
                 `;
 
-                row.querySelector(".edit-btn").addEventListener("click", () => openEditModal(item));
-                row.querySelector(".delete-btn").addEventListener("click", () => deleteNewsItem(item.newsId));
+                if (!locked) {
+                    row.querySelector(".edit-btn").addEventListener("click", () => openEditModal(item));
+                    row.querySelector(".delete-btn").addEventListener("click", () => deleteNewsItem(item.newsId));
+                }
                 modifyResultsBody.appendChild(row);
             });
         }
@@ -470,7 +577,11 @@
                 showAlert(modifyListAlert, "News item deleted successfully.", "success");
                 modifySearchBtn.click();
             } catch (err) {
-                showAlert(modifyListAlert, "Failed to delete: " + (err.body?.message || err.message), "error");
+                if (err.status === 403) {
+                    showAlert(modifyListAlert, err.body?.message || "You are not allowed to delete this news item.", "error");
+                } else {
+                    showAlert(modifyListAlert, "Failed to delete: " + (err.body?.message || err.message), "error");
+                }
             }
         }
 
@@ -498,6 +609,7 @@
 
             document.getElementById("editImporterId").value = item.importerId || "";
             document.getElementById("editIngestorId").value = item.ingestorId || "";
+            document.getElementById("editIsPrivate").checked = Boolean(item.isPrivate);
 
             editLocationController.setIds(item.locationIds || [], nameMaps.locations);
             editReporterController.setIds(item.reporterIds || [], nameMaps.reporters);
@@ -542,6 +654,7 @@
                 totalSize: finalSize,
                 importerId: numberOrNull(document.getElementById("editImporterId").value),
                 ingestorId: numberOrNull(document.getElementById("editIngestorId").value),
+                isPrivate: document.getElementById("editIsPrivate").checked,
                 reporterIds: editReporterController.ids(),
                 cameramanIds: editCameramanController.ids(),
                 locationIds: editLocationController.ids(),
@@ -556,6 +669,8 @@
             } catch (err) {
                 if (err.status === 409) {
                     showAlert(alertEl, "This news item was changed by someone else. Close this dialog and reload the list to try again.", "error");
+                } else if (err.status === 403) {
+                    showAlert(alertEl, err.body?.message || "You are not allowed to modify this news item.", "error");
                 } else {
                     showFormErrors(editForm, err, alertEl);
                 }
@@ -578,6 +693,20 @@
         const summaryModalEmpty = document.getElementById("summary-modal-empty");
         const summaryModalContent = document.getElementById("summary-modal-content");
 
+        // Export buttons + alert live inside the summary modal, so an export
+        // error is visible (the panel's own alert sits behind the modal).
+        const summaryModalAlert = document.getElementById("summary-modal-alert");
+        const summaryExportButtons = {
+            imported: {
+                csv: document.getElementById("summary-imported-csv-btn"),
+                pdf: document.getElementById("summary-imported-pdf-btn"),
+            },
+            ingested: {
+                csv: document.getElementById("summary-ingested-csv-btn"),
+                pdf: document.getElementById("summary-ingested-pdf-btn"),
+            },
+        };
+
         // Full lists for the current staff member/date range, fetched once.
         // Totals are computed from these; the two tables below are just a
         // client-side page into them, kept independent so paging one list
@@ -586,6 +715,42 @@
         let ingestedItems = [];
         let importedPage = 0;
         let ingestedPage = 0;
+
+        // The staff member and range of the summary currently on screen, so an
+        // export always matches it even if the inputs change behind the modal.
+        let summaryExportCtx = null;
+
+        // Imported -> filtered by importerId, Ingested -> filtered by ingestorId.
+        // Each list exports on its own, matching what its table shows.
+        function exportSummaryList(kind, format) {
+            if (!summaryExportCtx) return;
+            const params = new URLSearchParams();
+            params.append(kind === "imported" ? "importerId" : "ingestorId", summaryExportCtx.staffId);
+            params.append("startDate", summaryExportCtx.startDate);
+            params.append("endDate", summaryExportCtx.endDate);
+
+            hideAlert(summaryModalAlert);
+            downloadExport(
+                format,
+                params,
+                summaryExportButtons[kind][format],
+                format === "csv" ? "Export to CSV" : "Export to PDF",
+                summaryModalAlert,
+                "staff_summary_" + kind
+            );
+        }
+
+        ["imported", "ingested"].forEach((kind) => {
+            ["csv", "pdf"].forEach((format) => {
+                summaryExportButtons[kind][format].addEventListener("click", () => exportSummaryList(kind, format));
+            });
+        });
+
+        // A list with no rows has nothing to export.
+        function setSummaryExportEnabled(kind, enabled) {
+            summaryExportButtons[kind].csv.disabled = !enabled;
+            summaryExportButtons[kind].pdf.disabled = !enabled;
+        }
 
         function summaryAlertEl() {
             return document.getElementById("summary-alert");
@@ -664,6 +829,7 @@
             summaryModalLoading.classList.remove("hidden");
             summaryModalEmpty.classList.add("hidden");
             summaryModalContent.classList.add("hidden");
+            hideAlert(summaryModalAlert);
         }
 
         function closeSummaryModal() {
@@ -731,8 +897,8 @@
 
         // Same row shape as the search/modify results tables -- date,
         // title, cameramen/reporters/locations resolved via nameMaps,
-        // files, size -- so a staff member's news reads consistently
-        // with the rest of the app.
+        // files, size, privacy -- so a staff member's news reads
+        // consistently with the rest of the app.
         function renderSummaryTable(bodyId, items) {
             const body = document.getElementById(bodyId);
             body.innerHTML = "";
@@ -747,6 +913,7 @@
                     <td>${escapeHtml(item.filePath ?? "")}</td>
                     <td>${item.numberOfFiles ?? ""}</td>
                     <td>${item.totalSize != null ? item.totalSize.toFixed(2) : ""}</td>
+                    <td>${renderPrivacyBadge(item.isPrivate)}</td>
                 `;
                 body.appendChild(row);
             });
@@ -811,6 +978,9 @@
             renderImportedPage();
             renderIngestedPage();
 
+            setSummaryExportEnabled("imported", imported.length > 0);
+            setSummaryExportEnabled("ingested", ingested.length > 0);
+
             summaryModalLoading.classList.add("hidden");
 
             const hasAny = imported.length > 0 || ingested.length > 0;
@@ -826,6 +996,9 @@
             if (!validateSummaryInputs(staffId, startDate, endDate)) {
                 return;
             }
+
+            // Remember exactly what this summary was loaded with, for export.
+            summaryExportCtx = { staffId, startDate, endDate };
 
             hideAlert(summaryAlertEl());
             summaryLoadBtn.disabled = true;
@@ -861,8 +1034,18 @@
     const prevBtn = document.getElementById("page-prev");
     const nextBtn = document.getElementById("page-next");
 
+    const searchModalAlert = document.getElementById("search-modal-alert");
+    const exportActions = document.getElementById("search-export-actions");
+    const exportCsvBtn = document.getElementById("export-csv-btn");
+    const exportPdfBtn = document.getElementById("export-pdf-btn");
+
     let currentPage = 0;
     let totalPages = 0;
+
+    // Filters of the search currently on screen. Paging and export both use
+    // this snapshot, so they always match the results even if the form is
+    // edited while the results modal is open.
+    let lastSearchParams = new URLSearchParams();
 
     function setDateRangeError(message) {
         ["startDate", "endDate"].forEach((id) => {
@@ -906,6 +1089,7 @@
         }
         setDateRangeError(null);
         currentPage = 0;
+        lastSearchParams = buildFilterQueryParams();
         openResultsModal();
         runSearch();
     });
@@ -935,6 +1119,8 @@
         resultsEmpty.classList.remove("hidden");
         resultsTable.classList.add("hidden");
         paginationEl.classList.add("hidden");
+        exportActions.classList.add("hidden");
+        hideAlert(searchModalAlert);
     }
 
     function closeResultsModal() {
@@ -1054,7 +1240,9 @@
         return parts.join(" ").trim();
     }
 
-    async function runSearch() {
+    // The filter part of a search (no paging). Used for both the search
+    // request and the export request, so the two can never drift apart.
+    function buildFilterQueryParams() {
         const params = new URLSearchParams();
 
         const searchTerm = buildSearchTerm();
@@ -1070,6 +1258,22 @@
         searchCameramanController.ids().forEach((id) => params.append("cameramanIds", id));
         searchLocationController.ids().forEach((id) => params.append("locationIds", id));
 
+        const privacySelect = document.getElementById("searchIsPrivate");   // null for Viewers
+        if (privacySelect && privacySelect.value !== "") params.append("isPrivate", privacySelect.value);
+
+        return params;
+    }
+
+    function triggerSearchExport(format, btnEl, defaultLabel) {
+        hideAlert(searchModalAlert);
+        return downloadExport(format, new URLSearchParams(lastSearchParams), btnEl, defaultLabel, searchModalAlert, "news_export");
+    }
+
+    exportCsvBtn.addEventListener("click", () => triggerSearchExport("csv", exportCsvBtn, "Export to CSV"));
+    exportPdfBtn.addEventListener("click", () => triggerSearchExport("pdf", exportPdfBtn, "Export to PDF"));
+
+    async function runSearch() {
+        const params = new URLSearchParams(lastSearchParams);
         params.append("page", currentPage);
         params.append("size", PAGE_SIZE);
 
@@ -1081,6 +1285,7 @@
             resultsEmpty.classList.remove("hidden");
             resultsTable.classList.add("hidden");
             paginationEl.classList.add("hidden");
+            exportActions.classList.add("hidden");
         }
     }
 
@@ -1092,14 +1297,17 @@
             resultsEmpty.classList.remove("hidden");
             resultsTable.classList.add("hidden");
             paginationEl.classList.add("hidden");
+            exportActions.classList.add("hidden");
             return;
         }
 
         resultsEmpty.classList.add("hidden");
         resultsTable.classList.remove("hidden");
+        exportActions.classList.remove("hidden");
 
         resultsBody.innerHTML = "";
         page.content.forEach((item) => {
+            const privacyCell = isAdminOrStaff ? `<td>${renderPrivacyBadge(item.isPrivate)}</td>` : "";
             const row = document.createElement("tr");
             row.innerHTML = `
         <td>${item.newsDate ?? ""}</td>
@@ -1110,6 +1318,7 @@
         <td>${escapeHtml(item.filePath ?? "")}</td>
         <td>${item.numberOfFiles ?? ""}</td>
         <td>${item.totalSize != null ? item.totalSize.toFixed(2) : ""}</td>
+        ${privacyCell}
       `;
             resultsBody.appendChild(row);
         });

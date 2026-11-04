@@ -190,6 +190,14 @@
                     <button type="button" id="search-results-close" class="modal-close-btn" aria-label="Close">&times;</button>
                 </div>
                 <div class="modal-body">
+                    <!-- Export errors show here, inside the modal, so they are not hidden behind it -->
+                    <div id="search-modal-alert" class="alert"></div>
+
+                    <div id="search-export-actions" class="modal-actions hidden" style="justify-content: flex-start; margin-top: 0; margin-bottom: 16px;">
+                        <button type="button" id="export-csv-btn" class="btn btn-secondary">Export to CSV</button>
+                        <button type="button" id="export-pdf-btn" class="btn btn-secondary">Export to PDF</button>
+                    </div>
+
                     <div id="search-results-empty" class="empty-state">Run a search to see results.</div>
                     <table id="search-results-table" class="hidden">
                         <thead>

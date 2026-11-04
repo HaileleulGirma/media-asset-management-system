@@ -160,6 +160,64 @@
     const CREATE_DURATION_IDS = { h: "durationHours", m: "durationMinutes", s: "durationSeconds" };
     const EDIT_DURATION_IDS = { h: "editDurationHours", m: "editDurationMinutes", s: "editDurationSeconds" };
 
+    // ---------- Export download ----------
+    // Fetches /api/production/export/{csv|pdf} with the given filter params
+    // and saves the response as a file. Errors are shown in the given alert.
+
+    async function downloadExport(format, params, btnEl, defaultLabel, alertEl, filenameBase) {
+        const url = `${PRODUCTION_ENDPOINT}/export/${format}?${params.toString()}`;
+
+        if (btnEl) {
+            btnEl.disabled = true;
+            btnEl.textContent = "Exporting...";
+        }
+
+        try {
+            const headers = {};
+            const token = (typeof Auth !== "undefined" && typeof Auth.getToken === "function" && Auth.getToken())
+                || localStorage.getItem("token")
+                || localStorage.getItem("jwt")
+                || sessionStorage.getItem("token");
+            if (token) {
+                headers["Authorization"] = token.startsWith("Bearer ") ? token : `Bearer ${token}`;
+            }
+
+            const res = await fetch(url, {
+                method: "GET",
+                headers,
+                credentials: "same-origin",
+            });
+
+            if (!res.ok) {
+                let message = `Export failed (HTTP ${res.status})`;
+                // 422 = over the export limit; the server explains how many matched.
+                if (res.status === 422) {
+                    try {
+                        message = (await res.json()).message || message;
+                    } catch (_) { /* keep the generic message */ }
+                }
+                throw new Error(message);
+            }
+
+            const blob = await res.blob();
+            const downloadUrl = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = downloadUrl;
+            a.download = `${filenameBase}.${format}`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(downloadUrl);
+        } catch (err) {
+            showAlert(alertEl, "Could not export results: " + (err.message || "Unknown error"), "error");
+        } finally {
+            if (btnEl) {
+                btnEl.disabled = false;
+                btnEl.textContent = defaultLabel;
+            }
+        }
+    }
+
     // ---------- Add production item (ADMIN) ----------
 
     if (isAdmin) {
@@ -367,7 +425,7 @@
         });
     }
 
-    // ---------- Search (ADMIN + STAFF) ----------
+    // ---------- Search & Export (ADMIN + STAFF) ----------
 
     const searchForm = document.getElementById("search-production-form");
     const resetBtn = document.getElementById("search-reset");
@@ -379,8 +437,18 @@
     const prevBtn = document.getElementById("page-prev");
     const nextBtn = document.getElementById("page-next");
 
+    const searchModalAlert = document.getElementById("search-modal-alert");
+    const exportActions = document.getElementById("search-export-actions");
+    const exportCsvBtn = document.getElementById("export-csv-btn");
+    const exportPdfBtn = document.getElementById("export-pdf-btn");
+
     let currentPage = 0;
     let totalPages = 0;
+
+    // Filters of the search currently on screen. Paging and export both use
+    // this snapshot, so they always match the results even if the form is
+    // edited while the results modal is open.
+    let lastSearchParams = new URLSearchParams();
 
     function setDateRangeError(message) {
         ["startDate", "endDate"].forEach((id) => {
@@ -419,6 +487,7 @@
         }
         setDateRangeError(null);
         currentPage = 0;
+        lastSearchParams = buildFilterQueryParams();
         openResultsModal();
         runSearch();
     });
@@ -450,6 +519,8 @@
         resultsEmpty.classList.remove("hidden");
         resultsTable.classList.add("hidden");
         paginationEl.classList.add("hidden");
+        exportActions.classList.add("hidden");
+        hideAlert(searchModalAlert);
     }
 
     function closeResultsModal() {
@@ -569,7 +640,9 @@
         return parts.join(" ").trim();
     }
 
-    async function runSearch() {
+    // The filter part of a search (no paging). Used for both the search
+    // request and the export request, so the two can never drift apart.
+    function buildFilterQueryParams() {
         const params = new URLSearchParams();
 
         const searchTerm = buildSearchTerm();
@@ -578,6 +651,19 @@
         if (startDateInput.value) params.append("startDate", startDateInput.value);
         if (endDateInput.value) params.append("endDate", endDateInput.value);
 
+        return params;
+    }
+
+    function triggerSearchExport(format, btnEl, defaultLabel) {
+        hideAlert(searchModalAlert);
+        return downloadExport(format, new URLSearchParams(lastSearchParams), btnEl, defaultLabel, searchModalAlert, "production_export");
+    }
+
+    exportCsvBtn.addEventListener("click", () => triggerSearchExport("csv", exportCsvBtn, "Export to CSV"));
+    exportPdfBtn.addEventListener("click", () => triggerSearchExport("pdf", exportPdfBtn, "Export to PDF"));
+
+    async function runSearch() {
+        const params = new URLSearchParams(lastSearchParams);
         params.append("page", currentPage);
         params.append("size", PAGE_SIZE);
 
@@ -589,6 +675,7 @@
             resultsEmpty.classList.remove("hidden");
             resultsTable.classList.add("hidden");
             paginationEl.classList.add("hidden");
+            exportActions.classList.add("hidden");
         }
     }
 
@@ -600,11 +687,13 @@
             resultsEmpty.classList.remove("hidden");
             resultsTable.classList.add("hidden");
             paginationEl.classList.add("hidden");
+            exportActions.classList.add("hidden");
             return;
         }
 
         resultsEmpty.classList.add("hidden");
         resultsTable.classList.remove("hidden");
+        exportActions.classList.remove("hidden");
 
         resultsBody.innerHTML = "";
         page.content.forEach((item) => {

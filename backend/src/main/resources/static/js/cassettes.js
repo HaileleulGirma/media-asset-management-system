@@ -22,7 +22,8 @@
     if (!canEdit) {
         [
             "tab-bar", "create-cassette-panel", "manage-cassette-panel", "staff-summary-panel",
-            "edit-cut-overlay", "summary-results-overlay", "results-actions-th",
+            "edit-cut-overlay", "summary-results-overlay", "results-privacy-th", "results-actions-th",
+            "searchPrivacyField",
         ].forEach(removeById);
     }
 
@@ -43,6 +44,41 @@
             if (obj[n] !== undefined && obj[n] !== null) return obj[n];
         }
         return null;
+    }
+
+    async function downloadExport(baseUrl, format, params, btnEl, defaultLabel, alertEl, filenameBase) {
+        const url = `${baseUrl}/${format}?${params.toString()}`;
+        btnEl.disabled = true;
+        btnEl.textContent = "Exporting...";
+        try {
+            const headers = {};
+            const token = (typeof Auth !== "undefined" && typeof Auth.getToken === "function" && Auth.getToken())
+                || localStorage.getItem("token") || localStorage.getItem("jwt") || sessionStorage.getItem("token");
+            if (token) headers["Authorization"] = token.startsWith("Bearer ") ? token : `Bearer ${token}`;
+
+            const res = await fetch(url, { method: "GET", headers, credentials: "same-origin" });
+            if (!res.ok) {
+                let message = `Export failed (HTTP ${res.status})`;
+                if (res.status === 422) {
+                    try { message = (await res.json()).message || message; } catch (_) { /* keep generic */ }
+                }
+                throw new Error(message);
+            }
+            const blob = await res.blob();
+            const downloadUrl = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = downloadUrl;
+            a.download = `${filenameBase}.${format}`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(downloadUrl);
+        } catch (err) {
+            showAlert(alertEl, "Could not export results: " + (err.message || "Unknown error"), "error");
+        } finally {
+            btnEl.disabled = false;
+            btnEl.textContent = defaultLabel;
+        }
     }
 
     function normCassette(raw) {
@@ -769,6 +805,18 @@
         const prevBtnEl = $("summary-prev");
         const nextBtnEl = $("summary-next");
 
+        const summaryModalAlert = $("summary-modal-alert");
+        let summaryExportParams = null;
+
+        function exportSummary(format, btn, label) {
+            if (!summaryExportParams) return;
+            hideAlert(summaryModalAlert);
+            downloadExport(MEDIA_ENDPOINT + "/export", format, new URLSearchParams(summaryExportParams),
+                btn, label, summaryModalAlert, "cassette_staff_summary");
+        }
+        $("summary-export-csv-btn").addEventListener("click", () => exportSummary("csv", $("summary-export-csv-btn"), "Export to CSV"));
+        $("summary-export-pdf-btn").addEventListener("click", () => exportSummary("pdf", $("summary-export-pdf-btn"), "Export to PDF"));
+
         // Every cassette the person imported, fetched once. The totals come
         // from the whole list; the table is a client-side page into it.
         let items = [];
@@ -816,6 +864,7 @@
             loadingEl.classList.remove("hidden");
             emptyEl.classList.add("hidden");
             contentEl.classList.add("hidden");
+            hideAlert(summaryModalAlert);
         }
 
         function closeSummaryModal() {
@@ -928,6 +977,9 @@
 
             if (!validateSummaryInputs(staffId, startDate, endDate)) return;
 
+            // Remember exactly what this summary was loaded with, so the export matches it.
+            summaryExportParams = new URLSearchParams({ importerId: staffId, startDate, endDate });
+
             loadBtn.disabled = true;
             loadBtn.textContent = "Loading...";
             openSummaryModal(staffSelect.selectedOptions[0]?.textContent, startDate, endDate);
@@ -956,6 +1008,17 @@
     const pageStatus = $("page-status");
     const prevBtn = $("page-prev");
     const nextBtn = $("page-next");
+
+    const exportActions = $("search-export-actions");
+    const searchModalAlert = $("search-modal-alert");
+
+    function exportSearch(format, btn, label) {
+        hideAlert(searchModalAlert);
+        downloadExport("/api/cassette-cuts/export", format, new URLSearchParams(lastSearchParams),
+            btn, label, searchModalAlert, "cassette_cuts_export");
+    }
+    $("export-csv-btn").addEventListener("click", () => exportSearch("csv", $("export-csv-btn"), "Export to CSV"));
+    $("export-pdf-btn").addEventListener("click", () => exportSearch("pdf", $("export-pdf-btn"), "Export to PDF"));
 
     let currentPage = 0;
     let totalPages = 0;
@@ -991,6 +1054,7 @@
         }
         setDateRangeError(null);
 
+        lastSearchParams = buildFilterParams();
         currentPage = 0;
         openResultsModal();
         runSearch();
@@ -1012,6 +1076,8 @@
         resultsEmpty.classList.remove("hidden");
         resultsTable.classList.add("hidden");
         paginationEl.classList.add("hidden");
+        exportActions.classList.add("hidden");
+        hideAlert(searchModalAlert);
     }
 
     function closeResultsModal() {
@@ -1144,23 +1210,28 @@
         return parts.join(" ").trim();
     }
 
-    async function runSearch() {
-        const params = new URLSearchParams();
+    let lastSearchParams = new URLSearchParams();
 
+    function buildFilterParams() {
+        const params = new URLSearchParams();
         const searchTerm = buildSearchTerm();
         if (searchTerm) params.append("searchTerm", searchTerm);
 
-        // A single day is sent as a one-day range, so the backend's
-        // "between" filter always gets both ends.
+        // A single day is sent as a one-day range, same as before.
         const startDate = searchStartInput.value;
         if (startDate) {
             params.append("startDate", startDate);
             params.append("endDate", searchEndInput.value || startDate);
         }
-
         const cutCategory = $("searchCutCategory").value;
         if (cutCategory) params.append("categoryId", cutCategory);
+        const privacySelect = $("searchIsPrivate");   // null for Viewers
+        if (privacySelect && privacySelect.value !== "") params.append("isPrivate", privacySelect.value);
+        return params;
+    }
 
+    async function runSearch() {
+        const params = new URLSearchParams(lastSearchParams);
         params.append("page", currentPage);
         params.append("size", PAGE_SIZE);
 
@@ -1172,6 +1243,7 @@
             resultsEmpty.classList.remove("hidden");
             resultsTable.classList.add("hidden");
             paginationEl.classList.add("hidden");
+            exportActions.classList.add("hidden");
         }
     }
 
@@ -1179,8 +1251,7 @@
         const label = cut.shelfNumber != null
             ? cassetteLabel(cut.shelfCategoryId, cut.shelfNumber)
             : "Cassette #" + cut.mediaId;
-        const badge = cut.isPrivate ? ' <span class="private-badge">Private</span>' : "";
-        return escapeHtml(label) + badge;
+        return escapeHtml(label);
     }
 
     function renderResults(page) {
@@ -1191,24 +1262,34 @@
             resultsEmpty.classList.remove("hidden");
             resultsTable.classList.add("hidden");
             paginationEl.classList.add("hidden");
+            exportActions.classList.add("hidden");   // was "remove" -- that was the bug
             return;
         }
 
         resultsEmpty.classList.add("hidden");
         resultsTable.classList.remove("hidden");
+        exportActions.classList.remove("hidden");    // this line was missing
 
         resultsBody.innerHTML = "";
         page.content.map(normCut).forEach((cut) => {
             const canOpen = cut.shelfCategoryId != null && cut.shelfNumber != null;
+            const actionsCell = canEdit
+                ? `<td><button type="button" class="btn btn-secondary btn-sm open-btn"${canOpen ? "" : " disabled"}>Open cassette</button></td>`
+                : "";
+            const privacyCell = canEdit
+                ? `<td>${cut.isPrivate ? '<span class="private-badge">Private</span>' : '<span class="badge-inactive">Public</span>'}</td>`
+                : "";
+
             const row = document.createElement("tr");
             row.innerHTML = `
-                <td>${cassetteCellHtml(cut)}</td>
-                <td>${escapeHtml(cut.title)}</td>
-                <td>${cut.date ?? "—"}</td>
-                <td>${escapeHtml(categoryName(cut.categoryId))}</td>
-                <td>${escapeHtml(cut.filePath)}</td>
-                ${canEdit ? `<td><button type="button" class="btn btn-secondary btn-sm open-btn"${canOpen ? "" : " disabled"}>Open cassette</button></td>` : ""}
-            `;
+            <td>${cassetteCellHtml(cut)}</td>
+            <td>${escapeHtml(cut.title)}</td>
+            <td>${cut.date ?? "—"}</td>
+            <td>${escapeHtml(categoryName(cut.categoryId))}</td>
+            <td>${escapeHtml(cut.filePath)}</td>
+            ${privacyCell}
+            ${actionsCell}
+        `;
             if (canEdit && canOpen) {
                 row.querySelector(".open-btn").addEventListener("click", () => {
                     closeResultsModal();

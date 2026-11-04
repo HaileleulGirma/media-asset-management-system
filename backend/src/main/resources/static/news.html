@@ -84,6 +84,14 @@
                                 <div class="field-error"></div>
                             </div>
                         </div>
+
+                        <div class="field">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="isPrivate" name="isPrivate" />
+                                Is private
+                            </label>
+                            <div class="hint">Private news is hidden from Viewers.</div>
+                        </div>
                     </div>
 
                     <!-- Column 2: active-only + reporters + cameramen -->
@@ -144,7 +152,7 @@
             <form id="search-news-form" novalidate>
                 <div class="search-grid">
 
-                    <!-- Column 1: search-term builder + date range -->
+                    <!-- Column 1: search-term builder + date range + visibility -->
                     <div class="search-col search-col-terms">
                         <div class="field">
                             <label>Search terms</label>
@@ -186,6 +194,16 @@
                                 <input type="date" id="endDate" name="endDate" />
                                 <div class="field-error"></div>
                             </div>
+                        </div>
+
+                        <!-- Removed for Viewers by news.js (privacy filter is not theirs to see) -->
+                        <div class="field" id="searchPrivacyField">
+                            <label for="searchIsPrivate">Visibility</label>
+                            <select id="searchIsPrivate">
+                                <option value="">All</option>
+                                <option value="false">Public only</option>
+                                <option value="true">Private only</option>
+                            </select>
                         </div>
                     </div>
 
@@ -262,6 +280,7 @@
                     <th>File path</th>
                     <th>Files</th>
                     <th>Size (GB)</th>
+                    <th>Privacy</th>
                     <th>Imported by</th>
                     <th>Ingested by</th>
                     <th>Actions</th>
@@ -308,6 +327,7 @@
             <div id="summary-alert" class="alert"></div>
         </div>
 
+        <!-- Search results modal -->
         <div id="search-results-overlay" class="modal-overlay hidden">
             <div class="modal-content">
                 <div class="modal-header">
@@ -315,6 +335,14 @@
                     <button type="button" id="search-results-close" class="modal-close-btn" aria-label="Close">&times;</button>
                 </div>
                 <div class="modal-body">
+                    <!-- Export errors show here, inside the modal, so they are not hidden behind it -->
+                    <div id="search-modal-alert" class="alert"></div>
+
+                    <div id="search-export-actions" class="modal-actions hidden" style="justify-content: flex-start; margin-top: 0; margin-bottom: 16px;">
+                        <button type="button" id="export-csv-btn" class="btn btn-secondary">Export to CSV</button>
+                        <button type="button" id="export-pdf-btn" class="btn btn-secondary">Export to PDF</button>
+                    </div>
+
                     <div id="search-results-empty" class="empty-state">Run a search to see results.</div>
                     <table id="search-results-table" class="hidden">
                         <thead>
@@ -327,6 +355,8 @@
                             <th>File path</th>
                             <th>Files</th>
                             <th>Size (GB)</th>
+                            <!-- Removed from the DOM for Viewers by news.js -->
+                            <th id="search-privacy-th">Privacy</th>
                         </tr>
                         </thead>
                         <tbody id="search-results-body"></tbody>
@@ -409,6 +439,13 @@
                             </div>
                         </div>
 
+                        <div class="field">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="editIsPrivate" />
+                                Is private
+                            </label>
+                        </div>
+
                         <div class="field-row">
                             <div class="field">
                                 <label class="checkbox-label">
@@ -466,8 +503,8 @@
         <!-- Staff summary results modal: detached from the filter panel, same
              pattern as the search results modal, so a busy staff member's
              lists don't crowd (or overflow past) the filters. Imported and
-             ingested each get their own pagination -- paging one never
-             affects the other. -->
+             ingested each get their own pagination and their own export
+             buttons -- paging or exporting one never affects the other. -->
         <div id="summary-results-overlay" class="modal-overlay hidden">
             <div class="modal-content modal-content--wide">
                 <div class="modal-header">
@@ -475,6 +512,9 @@
                     <button type="button" id="summary-results-close" class="modal-close-btn" aria-label="Close">&times;</button>
                 </div>
                 <div class="modal-body">
+                    <!-- Export errors show here, inside the modal, so they are not hidden behind it -->
+                    <div id="summary-modal-alert" class="alert"></div>
+
                     <div id="summary-modal-loading" class="empty-state">Loading...</div>
                     <div id="summary-modal-empty" class="empty-state hidden">This staff member has no imported or ingested news in this range.</div>
 
@@ -497,6 +537,10 @@
                         <div class="summary-panels">
                             <div class="summary-section">
                                 <h3>News imported</h3>
+                                <div class="modal-actions" style="justify-content: flex-start; margin-top: 0; margin-bottom: 12px;">
+                                    <button type="button" id="summary-imported-csv-btn" class="btn btn-secondary">Export to CSV</button>
+                                    <button type="button" id="summary-imported-pdf-btn" class="btn btn-secondary">Export to PDF</button>
+                                </div>
                                 <div class="summary-table-wrap">
                                     <table id="summary-imported-table">
                                         <thead>
@@ -509,6 +553,7 @@
                                             <th>File path</th>
                                             <th>Files</th>
                                             <th>Size (GB)</th>
+                                            <th>Privacy</th>
                                         </tr>
                                         </thead>
                                         <tbody id="summary-imported-body"></tbody>
@@ -523,6 +568,10 @@
 
                             <div class="summary-section">
                                 <h3>News ingested</h3>
+                                <div class="modal-actions" style="justify-content: flex-start; margin-top: 0; margin-bottom: 12px;">
+                                    <button type="button" id="summary-ingested-csv-btn" class="btn btn-secondary">Export to CSV</button>
+                                    <button type="button" id="summary-ingested-pdf-btn" class="btn btn-secondary">Export to PDF</button>
+                                </div>
                                 <div class="summary-table-wrap">
                                     <table id="summary-ingested-table">
                                         <thead>
@@ -535,6 +584,7 @@
                                             <th>File path</th>
                                             <th>Files</th>
                                             <th>Size (GB)</th>
+                                            <th>Privacy</th>
                                         </tr>
                                         </thead>
                                         <tbody id="summary-ingested-body"></tbody>
