@@ -81,6 +81,7 @@ CREATE TABLE location (
 CREATE TABLE cassette_category (
                                    cassette_category_id BIGINT GENERATED ALWAYS AS IDENTITY,
                                    category_name VARCHAR(255) NOT NULL UNIQUE,
+                                   version BIGINT NOT NULL DEFAULT 0,
 
                                    PRIMARY KEY (cassette_category_id)
 );
@@ -103,7 +104,7 @@ CREATE TABLE app_user (
                           password VARCHAR(255) NOT NULL,
                           full_name VARCHAR(255) NOT NULL UNIQUE,
                           role_id BIGINT NOT NULL,
-                          last_changed DATE NOT NULL,
+                          last_changed DATE NOT NULL DEFAULT CURRENT_DATE,
 
                           PRIMARY KEY (user_id),
 
@@ -322,7 +323,7 @@ CREATE TABLE digitized_media (
                                  digitized_date DATE NOT NULL,
 
                                  identifier_category_id BIGINT NOT NULL,
-                                 identifier_number INTEGER NOT NULL,
+                                 identifier_number BIGINT NOT NULL,
 
                                  file_path TEXT NOT NULL,
                                  private BOOLEAN NOT NULL DEFAULT FALSE,
