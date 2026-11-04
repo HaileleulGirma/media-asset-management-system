@@ -25,13 +25,18 @@ public class CassetteCutMapper {
     }
 
     public CreateCassetteCutResponse toResponse(CassetteCut cassetteCut){
+        DigitizedMedia media = cassetteCut.getDigitizedMedia();
         return new CreateCassetteCutResponse(
                 cassetteCut.getCutId(),
                 cassetteCut.getCutTitle(),
                 cassetteCut.getCutDate(),
-                cassetteCut.getDigitizedMedia().getDigitizedMediaId(),
+                media.getDigitizedMediaId(),
                 cassetteCut.getCassetteCategory().getCategoryId(),
-                cassetteCut.getVersion());
+                cassetteCut.getVersion(),
+                media.getCassetteCategory() != null ? media.getCassetteCategory().getCategoryId() : null,
+                media.getIdentifierNumber(),
+                media.getFilePath(),
+                Boolean.TRUE.equals(media.getPrivate()));
     }
 
     public void updateCassetteCut(CassetteCut cassetteCut,

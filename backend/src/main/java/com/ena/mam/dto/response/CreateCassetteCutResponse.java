@@ -8,6 +8,10 @@ public record CreateCassetteCutResponse(
         LocalDate cutDate,
         Long digitizedMediaId,
         Long CassetteCategoryId,
-        Long version
+        Long version,
+        Long identifierCategoryId,
+        Long identifierNumber,
+        String filePath,
+        Boolean isPrivate
 ) {
 }

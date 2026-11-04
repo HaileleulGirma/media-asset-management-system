@@ -1,6 +1,8 @@
 package com.ena.mam.cassettecut;
 
+import com.ena.mam.util.AmharicNormalizer;
 import com.ena.mam.util.WebSearchParser;
+import jakarta.persistence.criteria.Expression;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.time.LocalDate;
@@ -38,7 +40,11 @@ public class CassetteCutSpecification {
     }
 
     public static Specification<CassetteCut> hasSearchTerm(String searchTerm) {
-        return (root, query, cb) ->
-                WebSearchParser.buildWebSearchPredicate(searchTerm, root.<String>get("cutTitle"), cb);
+        return (root, query, cb) -> {
+            String normalizedTerm = AmharicNormalizer.normalize(searchTerm);
+            Expression<String> indexedColumn = cb.function("amh_norm", String.class, root.get("cutTitle"));
+
+            return WebSearchParser.buildWebSearchPredicate(normalizedTerm, indexedColumn, cb);
+        };
     }
 }
